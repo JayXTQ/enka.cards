@@ -1,0 +1,20 @@
+{
+  "name": "quiet-wildflower-2088",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "start": "wrangler dev"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240208.0",
+    "typescript": "^5.0.4",
+    "wrangler": "^3.0.0"
+  },
+  "dependencies": {
+    "@types/webshot-node": "^0.18.4",
+    "cheerio": "^1.0.0-rc.12",
+    "webshot-node": "^0.18.3"
+  }
+}

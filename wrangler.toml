@@ -1,0 +1,8 @@
+name = "enkacards"
+main = "src/index.ts"
+compatibility_date = "2024-02-08"
+node_compat = true
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "enkacards"
