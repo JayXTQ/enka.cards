@@ -27,7 +27,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
         return res.redirect(url.href.replace(url.host, 'enka.network'));
     }
     if (image) {
-        const browser = await puppeteer.launch();
+        const browser = await puppeteer.launch({ args: ['--no-sandbox']});
 		const page = await browser.newPage();
 		await page.setViewport({ width: 1920, height: 1080 });
 		const enkaurl = url.href.replace(url.host, 'enka.network').replace('/image', '').replace('http://', 'https://');
