@@ -29,9 +29,20 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
     await page.setViewport({ width: 1920, height: 1080 });
     const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://');
     await page.goto(enkaurl);
-    await page.setCookie({ name: 'globalToggles', value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjpmYWxzZSwic2F2ZUltYWdlVG9TZXJ2ZXIiOmZhbHNlLCJzdWJzdGF0cyI6ZmFsc2UsInN1YnNCcmVha2Rvd24iOmZhbHNlLCJ1c2VyQ29udGVudCI6dHJ1ZSwiYWRhcHRpdmVDb2xvciI6ZmFsc2UsImhveW9fdHlwZSI6MH0' }) // this is a base64 json file, not a real cookie
+    // await page.setCookie({ name: 'globalToggles', value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjpmYWxzZSwic2F2ZUltYWdlVG9TZXJ2ZXIiOmZhbHNlLCJzdWJzdGF0cyI6ZmFsc2UsInN1YnNCcmVha2Rvd24iOmZhbHNlLCJ1c2VyQ29udGVudCI6dHJ1ZSwiYWRhcHRpdmVDb2xvciI6ZmFsc2UsImhveW9fdHlwZSI6MH0' }) // this is a base64 json file, not a real cookie
     await page.waitForSelector('div.Card');
-    // const buttons = await page.$$('button.Button');
+    const buttons = await page.$$('button.Button');
+    for(let button of buttons) {
+        const content = await (await button.$('span'))?.getProperty('textContent')?.then((e) => e.jsonValue());
+        if(content === 'Allow user images'){
+            await button.click();
+        }
+    }
+    await page.$$eval('button.Button', async (buttons) => {
+        for(let button of buttons){
+            await button.remove();
+        }
+    })
     const html = await page.$('div.Card')
     if(!html) return res.send('No card found');
     const img = await html.screenshot({ type: 'png' });
