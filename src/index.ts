@@ -1,7 +1,4 @@
 import express, { Request, Response } from 'express';
-import * as cheerio from 'cheerio';
-import nodeHtmlToImage from 'node-html-to-image';
-import axios from 'axios';
 import puppeteer from 'puppeteer';
 
 const app = express();
@@ -12,6 +9,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
     // if (!req.headers['user-agent']?.includes('Discordbot')) {
     //     return res.redirect(url.replace(req.hostname, 'enka.network'));
     // }
+    // https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594/image
     let uid = false;
     let image = false;
     let lengths = {
