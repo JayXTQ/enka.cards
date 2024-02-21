@@ -10,7 +10,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
     const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
     if (!req.headers['user-agent']?.includes('Discordbot')) {
-        return res.redirect(url.href.replace(req.hostname, 'enka.network').replace('http://', 'https://'));
+        return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
     }
     // https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
     let uid = false;
