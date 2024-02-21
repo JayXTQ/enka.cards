@@ -50,7 +50,8 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
     <head>
         <meta content="enka.cards" property="og:title" />
         <meta content="${url.href.replace(url.host, 'enka.network').replace('http://', 'https://')}" property="og:url" />
-        <meta name="twitter:card" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}}.png">
     </head>
 </html>`);
 });
