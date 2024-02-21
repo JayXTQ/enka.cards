@@ -1,1 +1,1 @@
-web: node build/index.js
+web: npx tsx src/index.ts
