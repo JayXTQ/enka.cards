@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/webshot-node": "^0.18.4",
     "cheerio": "^1.0.0-rc.12",
+    "node-html-to-image": "^4.0.0",
     "webshot-node": "^0.18.3"
   }
 }
