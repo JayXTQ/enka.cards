@@ -1,5 +1,5 @@
 {
-  "name": "quiet-wildflower-2088",
+  "name": "enka.cards",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -13,9 +13,7 @@
     "wrangler": "^3.0.0"
   },
   "dependencies": {
-    "@types/webshot-node": "^0.18.4",
     "cheerio": "^1.0.0-rc.12",
-    "node-html-to-image": "^4.0.0",
-    "webshot-node": "^0.18.3"
+    "node-html-to-image": "^4.0.0"
   }
 }
