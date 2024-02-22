@@ -39,7 +39,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		ContentType: 'image/png',
 		// ACL: 'public-read'
 	};
-	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${splitPaths.slice(-4).join('-')}.hash` })).catch(
+	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` })).catch(
 		() => null
 	);
 	const apicall = await axios
@@ -49,7 +49,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
         })
 		.catch(() => null);
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
-	if ((await hash?.Body?.transformToString()) === apihash) {
+	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		return res.send(`<!DOCTYPE html>
         <html>
             <head>
