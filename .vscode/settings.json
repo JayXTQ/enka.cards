@@ -1,0 +1,5 @@
+{
+    "prettier.tabWidth": 4,
+    "prettier.singleQuote": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+}
