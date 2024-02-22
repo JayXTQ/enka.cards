@@ -15,8 +15,8 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.split('/')
 		.filter((e) => e !== '')
 		.join('/');
-    const splitPaths = path.split('/');
-	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://');
+	const splitPaths = path.split('/');
+	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(enkaurl);
@@ -26,7 +26,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
 		return res.redirect(enkaurl);
 	}
-	if (splitPaths.filter(i => i !== 'image').slice(-3).length !== 3) {
+	if (splitPaths.filter((i) => i !== 'image').slice(-3).length !== 3) {
 		return res.redirect(enkaurl);
 	}
 	const S3 = new S3Client({
@@ -35,7 +35,10 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	});
 	const params = {
 		Bucket: 'enkacards',
-		Key: `${splitPaths.filter(i => i !== 'image').slice(-4).join('-')}.png`,
+		Key: `${splitPaths
+			.filter((i) => i !== 'image')
+			.slice(-4)
+			.join('-')}.png`,
 		Body: '',
 		ContentType: 'image/png',
 		// ACL: 'public-read'
@@ -45,13 +48,15 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	);
 	let apicall = await axios
 		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
-		.then((res) => { 
-            return res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]))
-        })
-		.catch(() => { return {} });
+		.then((res) => {
+			return res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]));
+		})
+		.catch(() => {
+			return {};
+		});
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
-		if(image) return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
+		if (image) return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
 		return res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -91,7 +96,8 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	await S3.send(
 		new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' })
 	);
-	if(!image) return res.send(`<!DOCTYPE html>
+	if (!image)
+		return res.send(`<!DOCTYPE html>
 	<html>
 		<head>
 			<meta content="enka.cards" property="og:title" />
