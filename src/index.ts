@@ -16,16 +16,17 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.filter((e) => e !== '')
 		.join('/');
     const splitPaths = path.split('/');
+	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://');
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
-		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
+		return res.redirect(enkaurl);
 	}
 	// https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
 	// http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
-		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
+		return res.redirect(enkaurl);
 	}
 	if (splitPaths.slice(-3).length !== 3) {
-		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
+		return res.redirect(enkaurl);
 	}
 	const S3 = new S3Client({
 		region: 'eu-west-2',
@@ -53,10 +54,10 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
         <html>
             <head>
                 <meta content="enka.cards" property="og:title" />
-                <meta content="${url.href.replace(url.host, 'enka.network').replace('http://', 'https://')}" property="og:url" />
+                <meta content="${enkaurl}" property="og:url" />
                 <meta name="twitter:card" content="summary_large_image">
                 <meta property="twitter:domain" content="enka.cards">
-                <meta property="twitter:url" content="${url.href.replace(url.host, 'enka.network').replace('http://', 'https://')}">
+                <meta property="twitter:url" content="${enkaurl}">
                 <meta name="twitter:title" content="enka.cards">
                 <meta name="twitter:description" content="">
                 <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
@@ -66,7 +67,6 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
 	const page = await browser.newPage();
 	await page.setViewport({ width: 1920, height: 1080 });
-	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://');
 	await page.goto(enkaurl);
 	await page.waitForSelector('div.Card');
 	const buttons = await page.$$('button.Button');
@@ -93,10 +93,10 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 <html>
     <head>
         <meta content="enka.cards" property="og:title" />
-        <meta content="${url.href.replace(url.host, 'enka.network').replace('http://', 'https://')}" property="og:url" />
+        <meta content="${enkaurl}" property="og:url" />
         <meta name="twitter:card" content="summary_large_image">
         <meta property="twitter:domain" content="enka.cards">
-        <meta property="twitter:url" content="${url.href.replace(url.host, 'enka.network').replace('http://', 'https://')}">
+        <meta property="twitter:url" content="${enkaurl}">
         <meta name="twitter:title" content="enka.cards">
         <meta name="twitter:description" content="">
         <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
