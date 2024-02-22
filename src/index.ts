@@ -26,7 +26,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
 		return res.redirect(enkaurl);
 	}
-	if (splitPaths.slice(-3).length !== 3) {
+	if (splitPaths.filter(i => i !== 'image').slice(-3).length !== 3) {
 		return res.redirect(enkaurl);
 	}
 	const S3 = new S3Client({
@@ -35,7 +35,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	});
 	const params = {
 		Bucket: 'enkacards',
-		Key: `${splitPaths.slice(-4).join('-')}.png`,
+		Key: `${splitPaths.filter(i => i !== 'image').slice(-4).join('-')}.png`,
 		Body: '',
 		ContentType: 'image/png',
 		// ACL: 'public-read'
