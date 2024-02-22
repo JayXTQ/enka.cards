@@ -56,7 +56,11 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		});
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
-		if (image) return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
+		if (image) {
+            const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }))
+            res.setHeader('Content-Type', 'image/png');
+            return res.end(await img.Body?.transformToByteArray(), 'binary')
+        }
 		return res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -110,7 +114,8 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
 		</head>
 	</html>`);
-	return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
+	res.setHeader('Content-Type', 'image/png');
+    return res.end(img, 'binary');
 });
 
 app.get('/', (req: Request, res: Response) => {
