@@ -18,7 +18,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const splitPaths = path.split('/');
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
-	if (!req.headers['user-agent']?.includes('Discordbot')) {
+	if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
 		return res.redirect(enkaurl);
 	}
 	// https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
