@@ -15,15 +15,16 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.split('/')
 		.filter((e) => e !== '')
 		.join('/');
+    const splitPaths = path.split('/');
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
 	}
 	// https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
 	// http://localhost:3000/u/jxtq/488BWO/10000089/3018594
-	if (/^(18|[1-35-9])\d{8}$/.test(path.split('/')[1])) {
+	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
 		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
 	}
-	if (path.split('/').slice(-3).length !== 3) {
+	if (splitPaths.slice(-3).length !== 3) {
 		return res.redirect(url.href.replace(url.host, 'enka.network').replace('http://', 'https://'));
 	}
 	const S3 = new S3Client({
@@ -32,17 +33,19 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	});
 	const params = {
 		Bucket: 'enkacards',
-		Key: `${path.split('/').slice(-4).join('-')}.png`,
+		Key: `${splitPaths.slice(-4).join('-')}.png`,
 		Body: '',
 		ContentType: 'image/png',
 		// ACL: 'public-read'
 	};
-	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${path.split('/').slice(-4).join('-')}.hash` })).catch(
+	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${splitPaths.slice(-4).join('-')}.hash` })).catch(
 		() => null
 	);
 	const apicall = await axios
-		.get(`https://enka.network/api/profile/${path.split('/')[1]}/hoyos/${path.split('/')[2]}/builds/`)
-		.then((res) => res.data[path.split('/')[3]].find((e: { id: number }) => e.id === parseInt(path.split('/')[4])))
+		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
+		.then((res) => { 
+            res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]))
+        })
 		.catch(() => null);
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if ((await hash?.Body?.transformToString()) === apihash) {
