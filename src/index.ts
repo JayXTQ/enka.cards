@@ -50,12 +50,12 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	let apicall = await axios
 		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
 		.then((res) => {
-			return res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]));
+			return JSON.stringify(res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4])));
 		})
 		.catch(() => {
-			return {};
+			return '{}';
 		});
-	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex') + locale;
+	const apihash = crypto.createHash('md5').update(apicall).digest('hex') + locale;
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		if (image) {
             const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }))
