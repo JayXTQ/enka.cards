@@ -84,7 +84,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
+	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none'] });
 	const page = await browser.newPage();
 	await page.setViewport({ width: 1920, height: 1080 });
     const cookies = [
