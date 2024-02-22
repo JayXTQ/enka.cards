@@ -47,8 +47,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.then((res) => { 
             return res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]))
         })
-		.catch(() => { return null });
-	if (!apicall) apicall = {}
+		.catch(() => { return {} });
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		return res.send(`<!DOCTYPE html>
