@@ -19,9 +19,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
     const locale = url.searchParams.get('lang') || 'en';
-	if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
-		return res.redirect(enkaurl);
-	}
+	// if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
+	// 	return res.redirect(enkaurl);
+	// }
 	// https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
 	// http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
@@ -56,6 +56,14 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 			return '{}';
 		});
 	const apihash = crypto.createHash('md5').update(apicall).digest('hex') + locale;
+    let result = '';
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const charactersLength = characters.length;
+    let counter = 0;
+    while (counter < 5) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+      counter += 1;
+    }
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		if (image) {
             const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }))
@@ -72,7 +80,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
                 <meta property="twitter:url" content="${enkaurl}">
                 <meta name="twitter:title" content="enka.cards">
                 <meta name="twitter:description" content="">
-                <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
+                <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
             </head>
         </html>`);
 	}
@@ -105,7 +113,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 			<meta property="twitter:url" content="${enkaurl}">
 			<meta name="twitter:title" content="enka.cards">
 			<meta name="twitter:description" content="">
-			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
+			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
 		</head>
 	</html>`);
 	res.setHeader('Content-Type', 'image/png');
