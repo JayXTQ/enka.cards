@@ -42,12 +42,13 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` })).catch(
 		() => null
 	);
-	const apicall = await axios
+	let apicall = await axios
 		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
 		.then((res) => { 
-            res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]))
+            return res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]))
         })
-		.catch(() => null);
+		.catch(() => { return null });
+	if (!apicall) apicall = {}
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		return res.send(`<!DOCTYPE html>
