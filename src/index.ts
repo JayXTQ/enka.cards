@@ -18,6 +18,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const splitPaths = path.split('/');
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
+    const locale = url.searchParams.get('lang') || 'en';
 	if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
 		return res.redirect(enkaurl);
 	}
@@ -54,7 +55,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.catch(() => {
 			return {};
 		});
-	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
+	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex') + locale;
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		if (image) {
             const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }))
@@ -78,20 +79,13 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const browser = await puppeteer.launch({ args: ['--no-sandbox'] });
 	const page = await browser.newPage();
 	await page.setViewport({ width: 1920, height: 1080 });
+    const cookies = [
+        { name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
+        { name: 'globalToggles', value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ', domain: 'enka.network', path: '/', expires: -1 }
+    ]
+    await page.setCookie(...cookies)
 	await page.goto(enkaurl);
 	await page.waitForSelector('div.Card');
-	const buttons = await page.$$('button.Button');
-	for (let button of buttons) {
-		const content = await (await button.$('span'))?.getProperty('textContent')?.then((e) => e.jsonValue());
-		if (content === 'Allow user images') {
-			await button.click();
-		}
-	}
-	await page.$$eval('button.Button', async (buttons) => {
-		for (let button of buttons) {
-			await button.remove();
-		}
-	});
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
 	const img = await html.screenshot({ type: 'png' });
