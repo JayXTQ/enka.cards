@@ -17,6 +17,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.join('/');
     const splitPaths = path.split('/');
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://');
+	const image = splitPaths.slice(-1)[0] === 'image';
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(enkaurl);
 	}
@@ -50,6 +51,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.catch(() => { return {} });
 	const apihash = crypto.createHash('md5').update(JSON.stringify(apicall)).digest('hex');
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
+		if(image) return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
 		return res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -89,19 +91,20 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	await S3.send(
 		new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' })
 	);
-	return res.send(`<!DOCTYPE html>
-<html>
-    <head>
-        <meta content="enka.cards" property="og:title" />
-        <meta content="${enkaurl}" property="og:url" />
-        <meta name="twitter:card" content="summary_large_image">
-        <meta property="twitter:domain" content="enka.cards">
-        <meta property="twitter:url" content="${enkaurl}">
-        <meta name="twitter:title" content="enka.cards">
-        <meta name="twitter:description" content="">
-        <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
-    </head>
-</html>`);
+	if(!image) return res.send(`<!DOCTYPE html>
+	<html>
+		<head>
+			<meta content="enka.cards" property="og:title" />
+			<meta content="${enkaurl}" property="og:url" />
+			<meta name="twitter:card" content="summary_large_image">
+			<meta property="twitter:domain" content="enka.cards">
+			<meta property="twitter:url" content="${enkaurl}">
+			<meta name="twitter:title" content="enka.cards">
+			<meta name="twitter:description" content="">
+			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}">
+		</head>
+	</html>`);
+	return res.redirect(`https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}`);
 });
 
 app.get('/', (req: Request, res: Response) => {
