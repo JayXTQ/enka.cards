@@ -84,7 +84,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security', '--disable-setuid-sandbox'] });
+	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security', '--disable-setuid-sandbox', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'] });
 	const page = await browser.newPage();
 	await page.setUserAgent("Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)");
 	await page.setViewport({ width: 1920, height: 1080 });
@@ -95,6 +95,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
     await page.setCookie(...cookies)
 	await page.goto(enkaurl, { waitUntil: 'networkidle0' });
 	await page.waitForSelector('div.Card');
+	await page.waitForSelector('div.weapon-caption>div.title')
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
 	const img = await html.screenshot({ type: 'png' });
