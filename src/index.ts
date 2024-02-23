@@ -8,7 +8,6 @@ dotenv.config();
 
 const app = express();
 
-
 let browser: Promise<Browser> | Browser = puppeteer.launch({
 	args: [
 		'--no-sandbox',
@@ -52,7 +51,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		Key: `${splitPaths
 			.filter((i) => i !== 'image')
 			.slice(-4)
-			.join('-')}.png`,
+			.join('-')}-${locale}.png`,
 		Body: '',
 		ContentType: 'image/png',
 		// ACL: 'public-read'
@@ -68,7 +67,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.catch(() => {
 			return '{}';
 		});
-	const apihash = crypto.createHash('md5').update(apicall).digest('hex') + locale;
+	const apihash = crypto.createHash('md5').update(apicall).digest('hex');
 	let result = '';
 	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 	const charactersLength = characters.length;
@@ -123,7 +122,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
 	const img = await html.screenshot({ type: 'png' });
-	await page.close()
+	await page.close();
 	await S3.send(new PutObjectCommand({ ...params, Body: img }));
 	await S3.send(
 		new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' })
