@@ -6,7 +6,7 @@
     "dev": "tsx src/index.ts",
     "dev:watch": "tsx watch src/index.ts",
     "build": "npx tsc",
-    "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
+    "heroku-postbuild": "apt-get -yq install xfonts-utils fonts-droid xfonts-intl-asian && mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
   },
   "devDependencies": {
     "tsx": "^4.7.1",
