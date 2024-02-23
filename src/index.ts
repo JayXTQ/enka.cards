@@ -94,6 +94,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
     ]
     await page.setCookie(...cookies)
 	await page.goto(enkaurl, { waitUntil: 'networkidle0' });
+	await page.evaluateHandle('document.fonts.ready');
 	await page.waitForSelector('div.Card');
 	await page.waitForSelector('div.weapon-caption>div.title')
 	const html = await page.$('div.Card');
