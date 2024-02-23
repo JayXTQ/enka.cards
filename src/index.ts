@@ -84,7 +84,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security'], slowMo: 250 });
+	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security'] });
 	const page = await browser.newPage();
 	await page.setUserAgent("Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)");
 	await page.setViewport({ width: 1920, height: 1080 });
@@ -93,7 +93,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
         { name: 'globalToggles', value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ', domain: 'enka.network', path: '/', expires: -1 }
     ]
     await page.setCookie(...cookies)
-	await page.goto(enkaurl);
+	await page.goto(enkaurl, { waitUntil: 'networkidle0' });
 	await page.waitForSelector('div.Card');
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
