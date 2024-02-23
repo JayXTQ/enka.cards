@@ -8,7 +8,7 @@ dotenv.config();
 
 const app = express();
 
-let browser: Promise<Browser> | Browser = puppeteer.launch({
+const browser = puppeteer.launch({
 	args: [
 		'--no-sandbox',
 		'--font-render-hinting=none',
@@ -96,8 +96,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	browser = await browser;
-	const page = await browser.newPage();
+	const page = await (await browser).newPage();
 	page.on('console', (msg) => console.log(`PAGE ${msg.type().substring(0, 3).toUpperCase()} (${url.pathname}):`, msg.text()));
 	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
 	page.on('error', (err) => console.log('ERROR:', err));
