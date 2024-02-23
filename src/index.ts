@@ -84,7 +84,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb'] });
+	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security'], slowMo: 250 });
 	const page = await browser.newPage();
 	await page.setUserAgent("Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)");
 	await page.setViewport({ width: 1920, height: 1080 });
