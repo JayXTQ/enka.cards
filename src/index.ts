@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import puppeteer from 'puppeteer';
+import puppeteer, { Browser } from 'puppeteer';
 import { S3Client, PutObjectCommand, GetObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import axios from 'axios';
@@ -7,6 +7,19 @@ import crypto from 'crypto';
 dotenv.config();
 
 const app = express();
+
+
+let browser: Promise<Browser> | Browser = puppeteer.launch({
+	args: [
+		'--no-sandbox',
+		'--font-render-hinting=none',
+		'--force-color-profile=srgb',
+		'--disable-web-security',
+		'--disable-setuid-sandbox',
+		'--disable-features=IsolateOrigins',
+		'--disable-site-isolation-trials',
+	]
+});
 
 app.get('/u/:path*', async (req: Request, res: Response) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -84,17 +97,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({
-		args: [
-			'--no-sandbox',
-			'--font-render-hinting=none',
-			'--force-color-profile=srgb',
-			'--disable-web-security',
-			'--disable-setuid-sandbox',
-			'--disable-features=IsolateOrigins',
-			'--disable-site-isolation-trials',
-		],
-	});
+	browser = await browser;
 	const page = await browser.newPage();
 	await page.setUserAgent('Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)');
 	await page.setViewport({ width: 1920, height: 1080 });
@@ -116,7 +119,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
 	const img = await html.screenshot({ type: 'png' });
-	await browser.close();
+	await page.close()
 	await S3.send(new PutObjectCommand({ ...params, Body: img }));
 	await S3.send(
 		new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' })
