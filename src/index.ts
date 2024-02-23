@@ -22,7 +22,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	// if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
 	// 	return res.redirect(enkaurl);
 	// }
-	// https://enkacards-53395edefde1.herokuapp.com/u/jxtq/488BWO/10000089/3018594
+	// https://cards.enka.network/u/jxtq/488BWO/10000089/3018594
 	// http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
 		return res.redirect(enkaurl);
@@ -84,8 +84,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none'] });
+	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb'] });
 	const page = await browser.newPage();
+	await page.setUserAgent("Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)");
 	await page.setViewport({ width: 1920, height: 1080 });
     const cookies = [
         { name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
