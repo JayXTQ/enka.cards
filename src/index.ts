@@ -100,6 +100,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	browser = await browser;
 	const page = await browser.newPage();
 	page.on('console', (msg) => console.log(`PAGE ${msg.type().substring(0, 3).toUpperCase()} (${url.pathname}):`, msg.text()));
+	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
+	page.on('error', (err) => console.log('ERROR:', err));
+	page.on('requestfailed', (req) => console.log('REQUEST FAILED:', req.url()));
 	await page.setUserAgent('Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)');
 	await page.setViewport({ width: 1920, height: 1080 });
 	const cookies = [
