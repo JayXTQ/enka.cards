@@ -18,7 +18,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const splitPaths = path.split('/');
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
-    const locale = url.searchParams.get('lang') || 'en';
+	const locale = url.searchParams.get('lang') || 'en';
 	// if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
 	// 	return res.redirect(enkaurl);
 	// }
@@ -56,20 +56,20 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 			return '{}';
 		});
 	const apihash = crypto.createHash('md5').update(apicall).digest('hex') + locale;
-    let result = '';
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const charactersLength = characters.length;
-    let counter = 0;
-    while (counter < 5) {
-      result += characters.charAt(Math.floor(Math.random() * charactersLength));
-      counter += 1;
-    }
+	let result = '';
+	const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	const charactersLength = characters.length;
+	let counter = 0;
+	while (counter < 5) {
+		result += characters.charAt(Math.floor(Math.random() * charactersLength));
+		counter += 1;
+	}
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		if (image) {
-            const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }))
-            res.setHeader('Content-Type', 'image/png');
-            return res.end(await img.Body?.transformToByteArray(), 'binary')
-        }
+			const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }));
+			res.setHeader('Content-Type', 'image/png');
+			return res.end(await img.Body?.transformToByteArray(), 'binary');
+		}
 		return res.send(`<!DOCTYPE html>
         <html>
             <head>
@@ -84,19 +84,35 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const browser = await puppeteer.launch({ args: ['--no-sandbox', '--font-render-hinting=none', '--force-color-profile=srgb', '--disable-web-security', '--disable-setuid-sandbox', '--disable-features=IsolateOrigins', '--disable-site-isolation-trials'] });
+	const browser = await puppeteer.launch({
+		args: [
+			'--no-sandbox',
+			'--font-render-hinting=none',
+			'--force-color-profile=srgb',
+			'--disable-web-security',
+			'--disable-setuid-sandbox',
+			'--disable-features=IsolateOrigins',
+			'--disable-site-isolation-trials',
+		],
+	});
 	const page = await browser.newPage();
-	await page.setUserAgent("Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)");
+	await page.setUserAgent('Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)');
 	await page.setViewport({ width: 1920, height: 1080 });
-    const cookies = [
-        { name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
-        { name: 'globalToggles', value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ', domain: 'enka.network', path: '/', expires: -1 }
-    ]
-    await page.setCookie(...cookies)
+	const cookies = [
+		{ name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
+		{
+			name: 'globalToggles',
+			value:
+				'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ',
+			domain: 'enka.network',
+			path: '/',
+			expires: -1,
+		},
+	];
+	await page.setCookie(...cookies);
 	await page.goto(enkaurl, { waitUntil: 'networkidle0' });
-	await page.evaluateHandle('document.fonts.ready');
+	await page.waitForFunction('document.fonts.ready');
 	await page.waitForSelector('div.Card');
-	await page.waitForSelector('div.weapon-caption>div.title')
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
 	const img = await html.screenshot({ type: 'png' });
@@ -120,7 +136,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		</head>
 	</html>`);
 	res.setHeader('Content-Type', 'image/png');
-    return res.end(img, 'binary');
+	return res.end(img, 'binary');
 });
 
 app.get('/', (req: Request, res: Response) => {
