@@ -31,9 +31,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
 	const image = splitPaths.slice(-1)[0] === 'image';
 	const locale = url.searchParams.get('lang') || 'en';
-	// if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
-	// 	return res.redirect(enkaurl);
-	// }
+	if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
+		return res.redirect(enkaurl);
+	}
 	// https://cards.enka.network/u/jxtq/488BWO/10000089/3018594
 	// http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 	if (/^(18|[1-35-9])\d{8}$/.test(splitPaths[1])) {
