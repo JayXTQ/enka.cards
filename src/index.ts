@@ -4,6 +4,7 @@ import { S3Client, PutObjectCommand, GetObjectCommand, PutObjectCommandInput } f
 import dotenv from 'dotenv';
 import axios from 'axios';
 import crypto from 'crypto';
+import sharp, { Sharp } from 'sharp';
 dotenv.config();
 
 const app = express();
@@ -120,7 +121,10 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	await page.waitForSelector('div.Card');
 	const html = await page.$('div.Card');
 	if (!html) return res.send('No card found');
-	const img = await html.screenshot({ type: 'png' });
+	let img: Sharp | Buffer = await html.screenshot({ type: 'png' });
+	img = sharp(img)
+	const imgmeta = await img.metadata();
+	img = await img.composite([{ input: Buffer.from(`<svg><rect x="0" y="0" width="${imgmeta.width}" height="${imgmeta.height}" rx="10" ry="10"/></svg>`), blend: 'dest-in' }]).toBuffer()
 	await page.close();
 	await S3.send(new PutObjectCommand({ ...params, Body: img }));
 	await S3.send(
