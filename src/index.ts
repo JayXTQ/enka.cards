@@ -29,7 +29,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		.filter((e) => e !== '')
 		.join('/');
 	const splitPaths = path.split('/');
-	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '');
+	const enkaurl = url.href.replace(url.host, 'enka.network').replace('http://', 'https://').replace('/image', '').replace(url.search, '');
 	const image = splitPaths.slice(-1)[0] === 'image';
 	const locale = url.searchParams.get('lang') || 'en';
 	if (!req.headers['user-agent']?.includes('Discordbot') && !image) {
