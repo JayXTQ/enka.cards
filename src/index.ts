@@ -63,7 +63,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	let apicall = await axios
 		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
 		.then((res) => {
-			return JSON.stringify(res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4])));
+			const data = res.data[splitPaths[3]].find((e: { id: number }) => e.id === parseInt(splitPaths[4]));
+			if (!data) return '{}';
+			return JSON.stringify(data);
 		})
 		.catch(() => {
 			return '{}';
