@@ -1,6 +1,6 @@
 import express, { Request, Response } from 'express';
-import puppeteer, { Browser } from 'puppeteer';
-import { S3Client, PutObjectCommand, GetObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import puppeteer from 'puppeteer';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
 import axios from 'axios';
 import crypto from 'crypto';
@@ -79,7 +79,14 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	}
 	if (hash && hash.Body && (await hash.Body.transformToString()) === apihash) {
 		if (image) {
-			const img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key }));
+			let img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key })).catch(() => null);
+			if (!img) {
+				await S3.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` }));
+				const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result);
+				if (!(img instanceof Buffer)) return img;
+				res.setHeader('Content-Type', 'image/png');
+				return res.end(img, 'binary');
+			}
 			res.setHeader('Content-Type', 'image/png');
 			return res.end(await img.Body?.transformToByteArray(), 'binary');
 		}
@@ -97,6 +104,22 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
+	const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result);
+	if (!(img instanceof Buffer)) return img;
+	res.setHeader('Content-Type', 'image/png');
+	return res.end(img, 'binary');
+});
+
+app.get('/', (_: Request, res: Response) => {
+	return res.redirect('https://enka.network');
+});
+
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+	console.log(`Server is running on port ${port}`);
+});
+
+async function getImage(locale: string, url: URL, enkaurl: string, res: Response) {
 	const page = await (await browser).newPage();
 	page.on('console', (msg) => console.log(`PAGE ${msg.type().substring(0, 3).toUpperCase()} (${url.pathname}):`, msg.text()));
 	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
@@ -121,11 +144,12 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		res.status(500);
 		return res.send('An error occurred');
 	}
-	await page.waitForFunction('document.fonts.ready');
-	await page.waitForSelector('div.Card');
-	const html = await page.$('div.Card');
+	await page.waitForFunction('document.fonts.ready').catch(() => null);
+	await page.waitForSelector('div.Card').catch(() => null);
+	const html = await page.$('div.Card').catch(() => null);
 	if (!html) return res.status(500).send('No card found');
-	let img: Sharp | Buffer = await html.screenshot({ type: 'png' });
+	let img: Sharp | Buffer | null = await html.screenshot({ type: 'png' }).catch(() => null);
+	if (!img) return res.status(500).send('No image found');
 	img = sharp(img);
 	const imgmeta = await img.metadata();
 	img = await img
@@ -137,6 +161,22 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		])
 		.toBuffer();
 	await page.close();
+	return img;
+}
+
+async function sendImage(
+	S3: S3Client,
+	locale: string,
+	url: URL,
+	enkaurl: string,
+	res: Response,
+	params: PutObjectCommandInput & { Key: string },
+	apihash: string,
+	image: boolean,
+	result: string,
+) {
+	const img = await getImage(locale, url, enkaurl, res);
+	if (!(img instanceof Buffer)) return img;
 	try {
 		await S3.send(new PutObjectCommand({ ...params, Body: img }));
 		await S3.send(
@@ -159,15 +199,5 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
 		</head>
 	</html>`);
-	res.setHeader('Content-Type', 'image/png');
-	return res.end(img, 'binary');
-});
-
-app.get('/', (_: Request, res: Response) => {
-	return res.redirect('https://enka.network');
-});
-
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-	console.log(`Server is running on port ${port}`);
-});
+	return img;
+}
