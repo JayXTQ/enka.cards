@@ -18,7 +18,7 @@ const browser = puppeteer.launch({
 		'--disable-setuid-sandbox',
 		'--disable-features=IsolateOrigins',
 		'--disable-site-isolation-trials',
-	]
+	],
 });
 
 app.get('/u/:path*', async (req: Request, res: Response) => {
@@ -58,7 +58,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		// ACL: 'public-read'
 	};
 	const hash = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` })).catch(
-		() => null
+		() => null,
 	);
 	let apicall = await axios
 		.get(`https://enka.network/api/profile/${splitPaths[1]}/hoyos/${splitPaths[2]}/builds/`)
@@ -102,34 +102,49 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
 	page.on('error', (err) => console.log('ERROR:', err));
 	page.on('requestfailed', (req) => console.log('REQUEST FAILED:', req.url()));
-	await page.setUserAgent('Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)');
-	await page.setViewport({ width: 1920, height: 1080 });
-	const cookies = [
-		{ name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
-		{
-			name: 'globalToggles',
-			value:
-				'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ',
-			domain: 'enka.network',
-			path: '/',
-			expires: -1,
-		},
-	];
-	await page.setCookie(...cookies);
-	await page.goto(enkaurl, { waitUntil: 'networkidle0' });
+	try {
+		await page.setUserAgent('Mozilla/5.0 (compatible; enka.cards/1.0; +https://cards.enka.network)');
+		await page.setViewport({ width: 1920, height: 1080 });
+		const cookies = [
+			{ name: 'locale', value: locale, domain: 'enka.network', path: '/', expires: -1 },
+			{
+				name: 'globalToggles',
+				value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjp0cnVlLCJzYXZlSW1hZ2VUb1NlcnZlciI6MCwic3Vic3RhdHMiOmZhbHNlLCJzdWJzQnJlYWtkb3duIjpmYWxzZSwidXNlckNvbnRlbnQiOnRydWUsImFkYXB0aXZlQ29sb3IiOmZhbHNlLCJob3lvX3R5cGUiOjAsInNub3ciOmZhbHNlfQ',
+				domain: 'enka.network',
+				path: '/',
+				expires: -1,
+			},
+		];
+		await page.setCookie(...cookies);
+		await page.goto(enkaurl, { waitUntil: 'networkidle0' });
+	} catch (error) {
+		res.status(500);
+		return res.send('An error occurred');
+	}
 	await page.waitForFunction('document.fonts.ready');
 	await page.waitForSelector('div.Card');
 	const html = await page.$('div.Card');
-	if (!html) return res.send('No card found');
+	if (!html) return res.status(500).send('No card found');
 	let img: Sharp | Buffer = await html.screenshot({ type: 'png' });
-	img = sharp(img)
+	img = sharp(img);
 	const imgmeta = await img.metadata();
-	img = await img.composite([{ input: Buffer.from(`<svg><rect x="0" y="0" width="${imgmeta.width}" height="${imgmeta.height}" rx="10" ry="10"/></svg>`), blend: 'dest-in' }]).toBuffer()
+	img = await img
+		.composite([
+			{
+				input: Buffer.from(`<svg><rect x="0" y="0" width="${imgmeta.width}" height="${imgmeta.height}" rx="10" ry="10"/></svg>`),
+				blend: 'dest-in',
+			},
+		])
+		.toBuffer();
 	await page.close();
-	await S3.send(new PutObjectCommand({ ...params, Body: img }));
-	await S3.send(
-		new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' })
-	);
+	try {
+		await S3.send(new PutObjectCommand({ ...params, Body: img }));
+		await S3.send(
+			new PutObjectCommand({ ...params, Key: `${params.Key.replace('.png', '')}.hash`, Body: apihash, ContentType: 'text/plain' }),
+		);
+	} catch (e) {
+		console.error(e);
+	}
 	if (!image)
 		return res.send(`<!DOCTYPE html>
 	<html>
@@ -148,7 +163,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	return res.end(img, 'binary');
 });
 
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_: Request, res: Response) => {
 	return res.redirect('https://enka.network');
 });
 
