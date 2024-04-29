@@ -81,14 +81,28 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 		if (image) {
 			let img = await S3.send(new GetObjectCommand({ Bucket: 'enkacards', Key: params.Key })).catch(() => null);
 			if (!img) {
-				await S3.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` }));
-				const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result);
+				await S3.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` })).catch(
+					() => null,
+				);
+				const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result).catch(() => null);
+				if (!img) return res.status(500).send('Error');
 				if (!(img instanceof Buffer)) return img;
 				res.setHeader('Content-Type', 'image/png');
 				return res.end(img, 'binary');
 			}
 			res.setHeader('Content-Type', 'image/png');
-			return res.end(await img.Body?.transformToByteArray(), 'binary');
+			const imgBody = await img.Body?.transformToByteArray();
+			if (!imgBody) {
+				await S3.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key: `${params.Key.replace('.png', '')}.hash` })).catch(
+					() => null,
+				);
+				await S3.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key: params.Key })).catch(() => null);
+				const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result).catch(() => null);
+				if (!img) return res.status(500).send('Error');
+				if (!(img instanceof Buffer)) return img;
+				return res.end(img, 'binary');
+			}
+			return res.end(imgBody, 'binary');
 		}
 		return res.send(`<!DOCTYPE html>
         <html>
@@ -104,7 +118,8 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result);
+	const img = await sendImage(S3, locale, url, enkaurl, res, params, apihash, image, result).catch(() => null);
+	if (!img) return res.status(500).send('Error');
 	if (!(img instanceof Buffer)) return img;
 	res.setHeader('Content-Type', 'image/png');
 	return res.end(img, 'binary');
