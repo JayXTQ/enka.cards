@@ -15,14 +15,13 @@ const app = express();
 async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
-	console.log(req.params.path)
-	const path = req.params.path
+	const paramsPath = req.params.path + req.params['0'];
+	const path = paramsPath
 		.split('/')
 		.filter((e) => e !== '')
 		.join('/');
-	console.log(path)
 	const splitPaths = path.split('/');
-	const enkaurl = `https://enka.network/u/${req.params.path}`;
+	const enkaurl = `https://enka.network/u/${paramsPath}`;
 	const locale = url.searchParams.get('lang') || 'en';
 	return { url, splitPaths, enkaurl, locale };
 }
@@ -64,18 +63,13 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 });
 
 app.get('/u/:path*', async (req: Request, res: Response) => {
-	console.log("pass 1")
 	const { url, splitPaths, enkaurl, locale } = await setupRoute(req, res);
-	console.log("pass 2")
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(enkaurl);
 	}
-	console.log("pass 3")
 	if (splitPaths.length !== 4) {
-		console.log(splitPaths)
 		return res.redirect(enkaurl);
 	}
-	console.log("pass 4")
 	const params = {
 		Bucket: 'enkacards',
 		Key: `${splitPaths.join('-')}-${locale}.png`,
@@ -85,7 +79,6 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	};
 	const result = randomChars();
 	const hashes = await getHash(params.Key, splitPaths);
-	console.log("pass 6")
 	if (sameHash(hashes)) {
 		return res.send(`<!DOCTYPE html>
         <html lang="${locale}">
@@ -102,13 +95,9 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	console.log("pass 7")
 	const img = await sendImage(locale, url, enkaurl, res, params, hashes[1], false, result).catch(() => null);
-	console.log("pass 8")
 	if (!img) return res.status(500).send('Error');
-	console.log("pass 9")
 	if (!(img instanceof Buffer)) return img;
-	console.log("pass 10")
 	res.setHeader('Content-Type', 'image/png');
 	return res.end(img, 'binary');
 });
