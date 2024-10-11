@@ -3,15 +3,15 @@ import {
 	GetObjectCommand,
 	DeleteObjectCommand,
 	PutObjectCommand,
-	PutObjectCommandInput
+	PutObjectCommandInput, ListBucketsCommand, CreateBucketCommand
 } from '@aws-sdk/client-s3';
 
 let S3: S3Client | null = null;
 
 function init() {
 	const client = new S3Client({
-		region: 'eu-west-2',
-		credentials: { accessKeyId: process.env.AWS_ACCESS_KEY_ID as string, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string },
+		endpoint: process.env.S3_ENDPOINT,
+		credentials: { accessKeyId: process.env.ACCESS_KEY_ID as string, secretAccessKey: process.env.SECRET_ACCESS_KEY as string },
 	});
 
 	S3 = client;
@@ -25,6 +25,14 @@ function getClient() {
 	return S3 as S3Client;
 }
 
+async function checkBucket(){
+	const client = getClient();
+	const buckets = await client.send(new ListBucketsCommand({}));
+	if (!buckets.Buckets?.find(e => e.Name === 'enkacards')){
+		await client.send(new CreateBucketCommand({ Bucket: 'enkacards', ACL: 'public-read' }));
+	}
+}
+
 class Client {
 	private readonly client: S3Client;
 
@@ -33,14 +41,21 @@ class Client {
 	}
 
 	async get(Key: string) {
+		await checkBucket();
 		return await this.client.send(new GetObjectCommand({ Bucket: 'enkacards', Key })).catch(() => null);
 	}
 
+	getUrl(Key: string) {
+		return `${process.env.S3_ENDPOINT}/enkacards/${Key}`;
+	}
+
 	async delete(Key: string) {
+		await checkBucket();
 		return await this.client.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key })).catch(() => null);
 	}
 
 	async put(Key: string, Body: PutObjectCommandInput['Body'], ContentType: string = 'image/png') {
+		await checkBucket();
 		return await this.client.send(new PutObjectCommand({ Bucket: 'enkacards', Key, Body, ContentType })).catch(() => null);
 	}
 }

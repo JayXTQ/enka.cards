@@ -90,7 +90,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
                 <meta property="twitter:url" content="${enkaurl}">
                 <meta name="twitter:title" content="enka.cards">
                 <meta name="twitter:description" content="">
-                <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
+                <meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
                 <title>enka.cards</title>
             </head>
         </html>`);
@@ -141,7 +141,7 @@ async function sendImage(
 			<meta property="twitter:url" content="${enkaurl}">
 			<meta name="twitter:title" content="enka.cards">
 			<meta name="twitter:description" content="">
-			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
+			<meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
 			<title>enka.cards</title>
 		</head>
 	</html>`);
