@@ -29,7 +29,7 @@ export async function getHash(key: string, paths: string[]): Promise<[string, st
 	const apiData: Record<string | number, unknown> = api ? api.data[paths[2]].find((e: { id: number }) => e.id === parseInt(paths[3])) : null;
 	const apiCall = apiData ? JSON.stringify(apiData) : '{}';
 	const apiHash = crypto.createHash('md5').update(apiCall).digest('hex');
-	return [(hash && hash.Body) ? await hash.Body.transformToString() : "", apiHash];
+	return [hash ? await hash.string() : "", apiHash];
 }
 
 export function sameHash(hashes: [string, string]){

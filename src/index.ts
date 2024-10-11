@@ -50,7 +50,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 		return res.end(img, 'binary');
 	}
 	res.setHeader('Content-Type', 'image/png');
-	const imgBody = await img.Body?.transformToByteArray();
+	const imgBody = await img.byteArray();
 	if (!imgBody) {
 		await client.delete(`${params.Key.replace('.png', '')}.hash`);
 		await client.delete(params.Key);

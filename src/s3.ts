@@ -5,15 +5,18 @@ import {
 	PutObjectCommand,
 	PutObjectCommandInput, ListBucketsCommand, CreateBucketCommand
 } from '@aws-sdk/client-s3';
+import { Client as MinioClient } from 'minio';
+import { Readable } from 'stream';
 
-let S3: S3Client | null = null;
+let S3: MinioClient | null = null;
 
 function init() {
-	const client = new S3Client({
-		region: "eu",
-		endpoint: process.env.S3_ENDPOINT,
-		credentials: { accessKeyId: process.env.ACCESS_KEY_ID as string, secretAccessKey: process.env.SECRET_ACCESS_KEY as string },
-	});
+	const client = new MinioClient({
+		endPoint: process.env.S3_ENDPOINT as string,
+		useSSL: true,
+		accessKey: process.env.ACCESS_KEY_ID as string,
+		secretKey: process.env.SECRET_ACCESS_KEY as string,
+	})
 
 	S3 = client;
 	return client;
@@ -23,20 +26,16 @@ function getClient() {
 	if (!S3) {
 		return init();
 	}
-	return S3 as S3Client;
+	return S3 as MinioClient;
 }
 
 async function checkBucket(){
 	const client = getClient();
-	const buckets = await client.send(new ListBucketsCommand({}));
-	console.log(buckets)
-	if (!buckets.Buckets?.find(e => e.Name === 'enkacards')){
-		await client.send(new CreateBucketCommand({ Bucket: 'enkacards', ACL: 'public-read' }));
-	}
+	await client.bucketExists('enkacards') || await client.makeBucket('enkacards');
 }
 
 class Client {
-	private readonly client: S3Client;
+	private readonly client: MinioClient;
 
 	constructor() {
 		this.client = getClient();
@@ -44,27 +43,63 @@ class Client {
 
 	async get(Key: string) {
 		await checkBucket();
-		return await this.client.send(new GetObjectCommand({ Bucket: 'enkacards', Key })).catch((err) => {
+
+		const obj = await this.client.getObject('enkacards', Key).catch((err) => {
 			console.error(err)
 			return null;
 		});
+
+		if (!obj) return null;
+
+		async function byteArray(){
+			const chunks: Uint8Array[] = [];
+			for await (const chunk of obj as NonNullable<typeof obj>) {
+				chunks.push(chunk);
+			}
+
+			const byteArray = Buffer.concat(chunks);
+			return byteArray;
+		}
+
+		async function string(){
+			let str = '';
+			for await (const chunk of obj as NonNullable<typeof obj>) {
+				str += chunk.toString();
+			}
+
+			return str;
+		}
+
+		return {
+			string,
+			byteArray
+		};
 	}
 
 	getUrl(Key: string) {
-		return `${process.env.S3_ENDPOINT}/enkacards/${Key}`;
+		return `https://${process.env.S3_ENDPOINT}/enkacards/${Key}`;
 	}
 
 	async delete(Key: string) {
 		await checkBucket();
-		return await this.client.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key })).catch((err) => {
+		return await this.client.removeObject('enkacards', Key).catch((err) => {
 			console.error(err)
 			return null;
 		});
 	}
 
-	async put(Key: string, Body: PutObjectCommandInput['Body'], ContentType: string = 'image/png') {
+	async put(Key: string, Body: NonNullable<PutObjectCommandInput['Body']>, ContentType: string = 'image/png') {
 		await checkBucket();
-		return await this.client.send(new PutObjectCommand({ Bucket: 'enkacards', Key, Body, ContentType })).catch((err) => {
+
+		if (typeof Body === 'string') {
+			Body = Readable.from(Body);
+		}
+		if(Body instanceof Uint8Array) Body = Readable.from(Body);
+		if(Body instanceof Blob) Body = Readable.from(Buffer.from(await Body.arrayBuffer()));
+
+		return await this.client.putObject('enkacards', Key, Body, undefined, {
+			ContentType
+		}).catch((err) => {
 			console.error(err)
 			return null;
 		});
