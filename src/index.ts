@@ -15,10 +15,12 @@ const app = express();
 async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
+	console.log(req.params.path)
 	const path = req.params.path
 		.split('/')
 		.filter((e) => e !== '')
 		.join('/');
+	console.log(path)
 	const splitPaths = path.split('/');
 	const enkaurl = `https://enka.network/u/${req.params.path}`;
 	const locale = url.searchParams.get('lang') || 'en';
