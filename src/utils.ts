@@ -17,16 +17,17 @@ export function randomChars(){
 	return result
 }
 
-export async function getHash(key: string, paths: string[]): Promise<[string, string]> {
+export async function getHash(key: string, username: string, hoyo: string, avatar: string, build: string): Promise<[string, string]> {
 
 	const settled = await Promise.allSettled([
 		client.get(`${key.replace('.png', '')}.hash` ),
-		axios.get(`https://enka.network/api/profile/${paths[0]}/hoyos/${paths[1]}/builds/`).catch(() => null)
+		axios.get(`https://enka.network/api/profile/${username}/hoyos/${hoyo}/builds/`).catch(() => null)
 	])
 
 	const hash = settled[0].status === 'fulfilled' ? settled[0].value || "" : "";
 	const api = settled[1].status === 'fulfilled' ? settled[1].value : null;
-	const apiData: Record<string | number, unknown> = api ? api.data[paths[2]].find((e: { id: number }) => e.id === parseInt(paths[3])) : null;
+	const apiAvatar = api ? api.data[avatar] : null;
+	const apiData: Record<string | number, unknown> | null = api ? apiAvatar ? apiAvatar.find((e: { id: number }) => e.id === parseInt(build)) || null : null : null;
 	const apiCall = apiData ? JSON.stringify(apiData) : '{}';
 	const apiHash = crypto.createHash('md5').update(apiCall).digest('hex');
 	return [hash ? await hash.string() : "", apiHash];

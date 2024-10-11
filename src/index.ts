@@ -15,35 +15,34 @@ const app = express();
 async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
-	const paramsPath = req.params.path + req.params['0'];
-	const path = paramsPath
-		.split('/')
-		.filter((e) => e !== '')
-		.join('/');
-	const splitPaths = path.split('/');
-	const enkaurl = `https://enka.network/u/${paramsPath}`;
+	const paramsPath = req.params.username + '/' + req.params.hoyo + '/' + req.params.avatar + '/' + req.params.build;
+	const enkaUrl = `https://enka.network/u/${paramsPath}`;
 	const locale = url.searchParams.get('lang') || 'en';
-	return { splitPaths, enkaurl, locale };
+	return { enkaUrl, locale };
 }
 
-app.get('/u/:path*/image', async (req: Request, res: Response) => {
-	const { splitPaths, enkaurl, locale } = await setupRoute(req, res);
-
-	const params = {
+function generateParams(req: Request, locale: string){
+	return {
 		Bucket: 'enkacards',
-		Key: `${splitPaths.join('-')}-${locale}.png`,
+		Key: `${req.params.username}-${req.params.hoyo}-${req.params.avatar}-${req.params.build}-${locale}.png`,
 		Body: '',
 		ContentType: 'image/png',
 		// ACL: 'public-read'
 	};
+}
 
-	const hashes = await getHash(params.Key, splitPaths);
+app.get('/u/:username/:hoyo/:avatar/:build/image', async (req: Request, res: Response) => {
+	const { enkaUrl, locale } = await setupRoute(req, res);
+
+	const params = generateParams(req, locale);
+
+	const hashes = await getHash(params.Key, req.params.username, req.params.hoyo, req.params.avatar, req.params.build);
 	const result = randomChars();
 
 	let img = await client.get(params.Key).catch(() => null);
 	if (!img) {
 		await client.delete(`${params.Key.replace('.png', '')}.hash`);
-		const img = await sendImage(locale, enkaurl, res, params, hashes[1], true, result).catch(() => null);
+		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		res.setHeader('Content-Type', 'image/png');
@@ -54,7 +53,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 	if (!imgBody) {
 		await client.delete(`${params.Key.replace('.png', '')}.hash`);
 		await client.delete(params.Key);
-		const img = await sendImage(locale, enkaurl, res, params, hashes[1], true, result).catch(() => null);
+		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		return res.end(img, 'binary');
@@ -62,32 +61,23 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 	return res.end(imgBody, 'binary');
 });
 
-app.get('/u/:path*', async (req: Request, res: Response) => {
-	const { splitPaths, enkaurl, locale } = await setupRoute(req, res);
+app.get('/u/:username/:hoyo/:avatar/:build', async (req: Request, res: Response) => {
+	const { enkaUrl, locale } = await setupRoute(req, res);
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
-		return res.redirect(enkaurl);
+		return res.redirect(enkaUrl);
 	}
-	if (splitPaths.length !== 4) {
-		return res.redirect(enkaurl);
-	}
-	const params = {
-		Bucket: 'enkacards',
-		Key: `${splitPaths.join('-')}-${locale}.png`,
-		Body: '',
-		ContentType: 'image/png',
-		// ACL: 'public-read'
-	};
+	const params = generateParams(req, locale);
 	const result = randomChars();
-	const hashes = await getHash(params.Key, splitPaths);
+	const hashes = await getHash(params.Key, req.params.username, req.params.hoyo, req.params.avatar, req.params.build);
 	if (sameHash(hashes)) {
 		return res.send(`<!DOCTYPE html>
         <html lang="${locale}">
             <head>
                 <meta content="enka.cards" property="og:title" />
-                <meta content="${enkaurl}" property="og:url" />
+                <meta content="${enkaUrl}" property="og:url" />
                 <meta name="twitter:card" content="summary_large_image">
                 <meta property="twitter:domain" content="enka.cards">
-                <meta property="twitter:url" content="${enkaurl}">
+                <meta property="twitter:url" content="${enkaUrl}">
                 <meta name="twitter:title" content="enka.cards">
                 <meta name="twitter:description" content="">
                 <meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
@@ -95,7 +85,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const img = await sendImage(locale, enkaurl, res, params, hashes[1], false, result).catch(() => null);
+	const img = await sendImage(locale, enkaUrl, res, params, hashes[1], false, result).catch(() => null);
 	if (!img) return res.status(500).send('Error');
 	if (!(img instanceof Buffer)) return img;
 	res.setHeader('Content-Type', 'image/png');
