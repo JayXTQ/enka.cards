@@ -31,7 +31,41 @@ function getClient() {
 
 async function checkBucket(){
 	const client = getClient();
-	await client.bucketExists('enkacards') || await client.makeBucket('enkacards');
+	if(!await client.bucketExists('enkacards')) {
+		await client.makeBucket('enkacards');
+		await Promise.allSettled([
+			client.setBucketPolicy('enkacards', JSON.stringify({
+				"Version": "2012-10-17",
+				"Statement": [
+					{
+						"Effect": "Allow",
+						"Principal": {
+							"AWS": [
+								"*"
+							]
+						},
+						"Action": [
+							"s3:GetObject"
+						],
+						"Resource": [
+							"arn:aws:s3:::enkacards/*"
+						]
+					}
+				]
+			})),
+			client.setBucketLifecycle('enkacards', {
+				Rule: [
+					{
+						ID: 'Delete images after 1 day',
+						Status: 'Enabled',
+						Expiration: {
+							Days: 1
+						}
+					}
+				]
+			})
+		])
+	}
 }
 
 class Client {
