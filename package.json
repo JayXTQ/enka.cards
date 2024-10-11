@@ -9,6 +9,7 @@
     "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
   },
   "devDependencies": {
+    "@smithy/types": "^3.5.0",
     "tsx": "^4.7.1",
     "typescript": "^5.0.4"
   },
