@@ -28,6 +28,7 @@ function getClient() {
 async function checkBucket(){
 	const client = getClient();
 	const buckets = await client.send(new ListBucketsCommand({}));
+	console.log(buckets)
 	if (!buckets.Buckets?.find(e => e.Name === 'enkacards')){
 		await client.send(new CreateBucketCommand({ Bucket: 'enkacards', ACL: 'public-read' }));
 	}
@@ -42,7 +43,10 @@ class Client {
 
 	async get(Key: string) {
 		await checkBucket();
-		return await this.client.send(new GetObjectCommand({ Bucket: 'enkacards', Key })).catch(() => null);
+		return await this.client.send(new GetObjectCommand({ Bucket: 'enkacards', Key })).catch((err) => {
+			console.error(err)
+			return null;
+		});
 	}
 
 	getUrl(Key: string) {
@@ -51,12 +55,18 @@ class Client {
 
 	async delete(Key: string) {
 		await checkBucket();
-		return await this.client.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key })).catch(() => null);
+		return await this.client.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key })).catch((err) => {
+			console.error(err)
+			return null;
+		});
 	}
 
 	async put(Key: string, Body: PutObjectCommandInput['Body'], ContentType: string = 'image/png') {
 		await checkBucket();
-		return await this.client.send(new PutObjectCommand({ Bucket: 'enkacards', Key, Body, ContentType })).catch(() => null);
+		return await this.client.send(new PutObjectCommand({ Bucket: 'enkacards', Key, Body, ContentType })).catch((err) => {
+			console.error(err)
+			return null;
+		});
 	}
 }
 
