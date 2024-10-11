@@ -10,6 +10,7 @@ let S3: S3Client | null = null;
 
 function init() {
 	const client = new S3Client({
+		region: "eu",
 		endpoint: process.env.S3_ENDPOINT,
 		credentials: { accessKeyId: process.env.ACCESS_KEY_ID as string, secretAccessKey: process.env.SECRET_ACCESS_KEY as string },
 	});
