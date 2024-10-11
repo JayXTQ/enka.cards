@@ -36,7 +36,7 @@ export function sameHash(hashes: [string, string]){
 	return hashes[0] === hashes[1];
 }
 
-export async function getImage(locale: string, url: URL, enkaurl: string, res: Response) {
+export async function getImage(locale: string, enkaurl: string, res: Response) {
 	const page = await (await getBrowser()).newPage();
 	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
 	page.on('error', (err) => console.log('ERROR:', err));

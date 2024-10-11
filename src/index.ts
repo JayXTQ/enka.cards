@@ -23,11 +23,11 @@ async function setupRoute(req: Request, res: Response) {
 	const splitPaths = path.split('/');
 	const enkaurl = `https://enka.network/u/${paramsPath}`;
 	const locale = url.searchParams.get('lang') || 'en';
-	return { url, splitPaths, enkaurl, locale };
+	return { splitPaths, enkaurl, locale };
 }
 
 app.get('/u/:path*/image', async (req: Request, res: Response) => {
-	const { url, splitPaths, enkaurl, locale } = await setupRoute(req, res);
+	const { splitPaths, enkaurl, locale } = await setupRoute(req, res);
 
 	const params = {
 		Bucket: 'enkacards',
@@ -43,7 +43,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 	let img = await client.get(params.Key).catch(() => null);
 	if (!img) {
 		await client.delete(`${params.Key.replace('.png', '')}.hash`);
-		const img = await sendImage(locale, url, enkaurl, res, params, hashes[1], true, result).catch(() => null);
+		const img = await sendImage(locale, enkaurl, res, params, hashes[1], true, result).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		res.setHeader('Content-Type', 'image/png');
@@ -54,7 +54,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 	if (!imgBody) {
 		await client.delete(`${params.Key.replace('.png', '')}.hash`);
 		await client.delete(params.Key);
-		const img = await sendImage(locale, url, enkaurl, res, params, hashes[1], true, result).catch(() => null);
+		const img = await sendImage(locale, enkaurl, res, params, hashes[1], true, result).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		return res.end(img, 'binary');
@@ -63,7 +63,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 });
 
 app.get('/u/:path*', async (req: Request, res: Response) => {
-	const { url, splitPaths, enkaurl, locale } = await setupRoute(req, res);
+	const { splitPaths, enkaurl, locale } = await setupRoute(req, res);
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(enkaurl);
 	}
@@ -95,7 +95,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
             </head>
         </html>`);
 	}
-	const img = await sendImage(locale, url, enkaurl, res, params, hashes[1], false, result).catch(() => null);
+	const img = await sendImage(locale, enkaurl, res, params, hashes[1], false, result).catch(() => null);
 	if (!img) return res.status(500).send('Error');
 	if (!(img instanceof Buffer)) return img;
 	res.setHeader('Content-Type', 'image/png');
@@ -113,7 +113,6 @@ app.listen(port, () => {
 
 async function sendImage(
 	locale: string,
-	url: URL,
 	enkaurl: string,
 	res: Response,
 	params: PutObjectCommandInput & { Key: string },
@@ -121,7 +120,7 @@ async function sendImage(
 	image: boolean,
 	result: string,
 ) {
-	const img = await getImage(locale, url, enkaurl, res);
+	const img = await getImage(locale, enkaurl, res);
 	if (!(img instanceof Buffer)) return img;
 	try {
 		await Promise.allSettled([
