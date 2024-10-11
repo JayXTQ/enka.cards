@@ -137,3 +137,7 @@ async function sendImage(
 	</html>`);
 	return img;
 }
+
+app.use((_: Request, res: Response) => {
+	res.redirect('https://enka.network')
+})
