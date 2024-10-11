@@ -1,5 +1,10 @@
-import { S3Client, GetObjectCommand, DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
-import { StreamingBlobPayloadInputTypes } from '@smithy/types';
+import {
+	S3Client,
+	GetObjectCommand,
+	DeleteObjectCommand,
+	PutObjectCommand,
+	PutObjectCommandInput
+} from '@aws-sdk/client-s3';
 
 let S3: S3Client | null = null;
 
@@ -35,7 +40,7 @@ class Client {
 		return await this.client.send(new DeleteObjectCommand({ Bucket: 'enkacards', Key })).catch(() => null);
 	}
 
-	async put(Key: string, Body: StreamingBlobPayloadInputTypes, ContentType: string = 'image/png') {
+	async put(Key: string, Body: PutObjectCommandInput['Body'], ContentType: string = 'image/png') {
 		return await this.client.send(new PutObjectCommand({ Bucket: 'enkacards', Key, Body, ContentType })).catch(() => null);
 	}
 }

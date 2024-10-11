@@ -1,11 +1,7 @@
 import express, { Request, Response } from 'express';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { PutObjectCommandInput } from '@aws-sdk/client-s3';
 import dotenv from 'dotenv';
-import axios from 'axios';
-import crypto from 'crypto';
-import sharp, { Sharp } from 'sharp';
 import { client } from './s3';
-import { getBrowser } from './puppeteer';
 import { getHash, getImage, randomChars, sameHash } from './utils';
 
 dotenv.config();
@@ -16,7 +12,7 @@ const app = express();
 // https://cards.enka.network/u/jxtq/488BWO/10000089/3018594
 // http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 
-app.get('/u/:path*/image', async (req: Request, res: Response) => {
+async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
 	const path = req.params.path
@@ -26,6 +22,11 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 	const splitPaths = path.split('/');
 	const enkaurl = `https://enka.network/u/${req.params.path}`;
 	const locale = url.searchParams.get('lang') || 'en';
+	return { url, splitPaths, enkaurl, locale };
+}
+
+app.get('/u/:path*/image', async (req: Request, res: Response) => {
+	const { url, splitPaths, enkaurl, locale } = await setupRoute(req, res);
 
 	const params = {
 		Bucket: 'enkacards',
@@ -61,15 +62,7 @@ app.get('/u/:path*/image', async (req: Request, res: Response) => {
 });
 
 app.get('/u/:path*', async (req: Request, res: Response) => {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
-	const path = req.params.path
-		.split('/')
-		.filter((e) => e !== '')
-		.join('/');
-	const splitPaths = path.split('/');
-	const enkaurl = `https://enka.network/u/${req.params.path}`;
-	const locale = url.searchParams.get('lang') || 'en';
+	const { url, splitPaths, enkaurl, locale } = await setupRoute(req, res);
 	if (!req.headers['user-agent']?.includes('Discordbot')) {
 		return res.redirect(enkaurl);
 	}
@@ -87,7 +80,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	const hashes = await getHash(params.Key, splitPaths);
 	if (sameHash(hashes)) {
 		return res.send(`<!DOCTYPE html>
-        <html>
+        <html lang="${locale}">
             <head>
                 <meta content="enka.cards" property="og:title" />
                 <meta content="${enkaurl}" property="og:url" />
@@ -97,6 +90,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
                 <meta name="twitter:title" content="enka.cards">
                 <meta name="twitter:description" content="">
                 <meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
+                <title>enka.cards</title>
             </head>
         </html>`);
 	}
@@ -130,15 +124,15 @@ async function sendImage(
 	if (!(img instanceof Buffer)) return img;
 	try {
 		await Promise.allSettled([
-			client.delete(`${params.Key.replace('.png', '')}.hash`),
-			client.delete(params.Key),
+			client.put(`${params.Key.replace('.png', '')}.hash`, apihash),
+			client.put(params.Key, img),
 		]);
 	} catch (e) {
 		console.error(e);
 	}
 	if (!image)
 		return res.send(`<!DOCTYPE html>
-	<html>
+	<html lang="${locale}">
 		<head>
 			<meta content="enka.cards" property="og:title" />
 			<meta content="${enkaurl}" property="og:url" />
@@ -148,6 +142,7 @@ async function sendImage(
 			<meta name="twitter:title" content="enka.cards">
 			<meta name="twitter:description" content="">
 			<meta name="twitter:image" content="https://${params.Bucket}.s3.eu-west-2.amazonaws.com/${params.Key}?${result}">
+			<title>enka.cards</title>
 		</head>
 	</html>`);
 	return img;
