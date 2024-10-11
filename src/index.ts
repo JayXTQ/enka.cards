@@ -70,6 +70,7 @@ app.get('/u/:path*', async (req: Request, res: Response) => {
 	}
 	console.log("pass 3")
 	if (splitPaths.length !== 4) {
+		console.log(splitPaths)
 		return res.redirect(enkaurl);
 	}
 	console.log("pass 4")
