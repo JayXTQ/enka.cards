@@ -71,11 +71,11 @@ async function routeHandler(res: Response, image: boolean, route: SetupRouteRetu
 }
 
 export async function HSR(req: Request, res: Response, image: boolean) {
-	const route = await setupHSRUidRoute(req, res, false);
+	const route = await setupHSRUidRoute(req, res, image);
 	return await routeHandler(res, image, route);
 }
 
 export async function GI(req: Request, res: Response, image: boolean) {
-	const route = await setupGIUidRoute(req, res, false);
+	const route = await setupGIUidRoute(req, res, image);
 	return await routeHandler(res, image, route);
 }

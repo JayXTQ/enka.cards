@@ -82,7 +82,6 @@ export async function getUidImage(
 	);
 	if (!selectors[cardNumber]) return res.status(500).send('No card found');
 	await selectors[cardNumber].click();
-	console.log('generating card');
 	const img = await generateCard(page, res);
 	return img;
 }
