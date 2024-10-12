@@ -35,7 +35,7 @@ export async function setupPage(locale: string, url: string, res: Response) {
 }
 
 async function generateCard(page: Page, res: Response) {
-	await page.waitForSelector('div.controls>div.StageButton>div').catch(() => null);
+	await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => null);
 	const html = await page.waitForSelector('div.Card').catch(() => null);
 	if (!html) return res.status(500).send('No card found');
 	let img: Sharp | Buffer | null = await html.screenshot({ type: 'png' }).catch(() => null);

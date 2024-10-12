@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { getImage, getUidImage } from './puppeteer';
 import { client } from '../s3';
+import { getGICharacters } from './enka-api';
 
 export async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,4 +50,24 @@ export async function sendImage(
 		</head>
 	</html>`);
 	return img;
+}
+
+export type UidAPIData = {
+	[k: string]: unknown;
+	avatarInfoList: {
+		avatarId: number;
+		[k: string]: unknown;
+	}[]
+}
+
+export async function getCardNumber(apiData: UidAPIData, locale: string, character: string){
+	const GICharacters = await getGICharacters(locale)
+	function avIdToIndex(id: number){
+		console.log(apiData.avatarInfoList.findIndex((e) => e.avatarId === id));
+		return apiData.avatarInfoList.findIndex((e) => e.avatarId === id);
+	}
+
+	let cardNumber = avIdToIndex(parseInt(character)) || character.length === 1 ? parseInt(character)-1 : avIdToIndex(parseInt(GICharacters.find((e) => e.name === character)?.characterId || "0"));
+	if(cardNumber === -1) cardNumber = 0;
+	return cardNumber;
 }
