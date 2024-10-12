@@ -79,7 +79,7 @@ class Client {
 		await checkBucket();
 
 		const obj = await this.client.getObject('enkacards', Key).catch((err) => {
-			console.error(err)
+			// console.error(err)
 			return null;
 		});
 
