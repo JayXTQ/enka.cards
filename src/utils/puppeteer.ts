@@ -35,7 +35,7 @@ export async function setupPage(locale: string, url: string, res: Response) {
 }
 
 async function generateCard(page: Page, res: Response) {
-	await page.waitForNavigation({ waitUntil: 'networkidle0' }).catch(() => null);
+	await page.waitForSelector('div.Card>div.card-host').catch(() => null);
 	const html = await page.waitForSelector('div.Card').catch(() => null);
 	if (!html) return res.status(500).send('No card found');
 	let img: Sharp | Buffer | null = await html.screenshot({ type: 'png' }).catch(() => null);
@@ -57,8 +57,8 @@ export async function getUidImage(locale: string, enkaurl: string, res: Response
 	if(!(page instanceof Page)) return page;
 	await page.waitForSelector('content>div.CharacterList>div.avatar.live').catch(() => null);
 	const selectors = await page.$$('content>div.CharacterList>div.avatar.live');
-	const selector = selectors[cardNumber].click();
-	if (!selector) return res.status(500).send('No card found');
+	if(!selectors[cardNumber]) return res.status(500).send('No card found');
+	await selectors[cardNumber].click();
 	const img = await generateCard(page, res);
 	return img;
 }

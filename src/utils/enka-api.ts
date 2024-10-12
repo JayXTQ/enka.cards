@@ -5,7 +5,7 @@ type GICharactersAPI = Record<string, {
 	NameTextMapHash: number;
 }>
 
-type Characters = {
+export type Characters = {
 	name: string;
 	characterId: string;
 	nameHash: number;
@@ -47,7 +47,7 @@ type HSRCharactersAPI = Record<string, {
 
 export async function getHSRCharacters(locale: string) {
 	const locales = await getHSRLocales();
-	const response = await axios.get('https://github.com/EnkaNetwork/API-docs/blob/master/store/hsr/honker_characters.json');
+	const response = await axios.get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/hsr/honker_characters.json');
 	const data: HSRCharactersAPI = response.data;
 	const returndata: Characters[] = [];
 	const localedata = locales[locale] || locales['en'];

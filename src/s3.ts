@@ -10,16 +10,20 @@ import { Readable } from 'stream';
 
 let S3: MinioClient | null = null;
 
-function init() {
-	const client = new MinioClient({
+export let client: Client;
+
+export function init() {
+	if(!process.env.S3_ENDPOINT) return;
+	const mClient = new MinioClient({
 		endPoint: process.env.S3_ENDPOINT as string,
 		useSSL: true,
 		accessKey: process.env.ACCESS_KEY_ID as string,
 		secretKey: process.env.SECRET_ACCESS_KEY as string,
 	})
 
-	S3 = client;
-	return client;
+	S3 = mClient;
+	client = new Client(mClient);
+	return mClient;
 }
 
 function getClient() {
@@ -31,6 +35,7 @@ function getClient() {
 
 async function checkBucket(){
 	const client = getClient();
+	if(!client) return;
 	if(!await client.bucketExists('enkacards')) {
 		await client.makeBucket('enkacards');
 		await Promise.allSettled([
@@ -71,8 +76,10 @@ async function checkBucket(){
 class Client {
 	private readonly client: MinioClient;
 
-	constructor() {
-		this.client = getClient();
+	constructor(client?: MinioClient) {
+		if(!client) client = getClient();
+		if(!client) throw new Error('S3 not initialized');
+		this.client = client;
 	}
 
 	async get(Key: string) {
@@ -139,5 +146,3 @@ class Client {
 		});
 	}
 }
-
-export const client = new Client();

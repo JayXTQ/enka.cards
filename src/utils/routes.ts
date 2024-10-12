@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { getImage, getUidImage } from './puppeteer';
 import { client } from '../s3';
-import { getGICharacters } from './enka-api';
+import { Characters, getGICharacters, getHSRCharacters } from './enka-api';
 
 export async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -52,25 +52,49 @@ export async function sendImage(
 	return img;
 }
 
-export type UidAPIData = {
+export type GIUidAPIData = {
 	[k: string]: unknown;
 	avatarInfoList: {
 		avatarId: number;
 		[k: string]: unknown;
-	}[]
+	}[];
 }
 
-export async function getCardNumber(apiData: UidAPIData, locale: string, character: string){
+function getCardNumber(avIdToIndex: (id: number) => number | null, characterList: Characters[], character: string) {
+	const avatarId = avIdToIndex(parseInt(character));
+	const cardNoOrName = character.length === 1 ? parseInt(character) - 1 : avIdToIndex(parseInt(characterList.find((e) => e.name === character)?.characterId || "0"));
+	let cardNumber = avatarId !== null ? avatarId : cardNoOrName;
+	if (!cardNumber) cardNumber = 0;
+	if (cardNumber === -1) cardNumber = 0;
+	return cardNumber;
+}
+
+export async function getGICardNumber(apiData: GIUidAPIData, locale: string, character: string){
 	const GICharacters = await getGICharacters(locale)
 	function avIdToIndex(id: number){
 		const index = apiData.avatarInfoList.findIndex((e) => e.avatarId === id);
 		const ret = index === -1 ? null : index;
-		console.log("ret", ret);
 		return ret;
 	}
+	return getCardNumber(avIdToIndex, GICharacters, character);
+}
 
-	let cardNumber = avIdToIndex(parseInt(character)) || character.length === 1 ? parseInt(character)-1 : avIdToIndex(parseInt(GICharacters.find((e) => e.name === character)?.characterId || "0"));
-	if(cardNumber === -1) cardNumber = 0;
-	if(!cardNumber) cardNumber = 0;
-	return cardNumber;
+export type HSRUidAPIData = {
+	detailInfo: {
+		avatarDetailList: {
+			avatarId: number;
+			[k: string]: unknown;
+		}[];
+	};
+	[k: string]: unknown;
+}
+
+export async function getHSRCardNumber(apiData: HSRUidAPIData, locale: string, character: string) {
+	const HSRCharacters = await getHSRCharacters(locale)
+	function avIdToIndex(id: number) {
+		const index = apiData.detailInfo.avatarDetailList.findIndex((e) => e.avatarId === id);
+		const ret = index === -1 ? null : index;
+		return ret;
+	}
+	return getCardNumber(avIdToIndex, HSRCharacters, character);
 }
