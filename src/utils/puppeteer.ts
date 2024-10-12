@@ -3,6 +3,7 @@ import { getBrowser } from '../puppeteer';
 import { Page } from 'puppeteer';
 import { Sharp } from 'sharp';
 import { cardify } from './sharp';
+import { sleep } from './misc';
 
 export async function setupPage(locale: string, url: string, res: Response) {
 	const page = await (await getBrowser()).newPage();
@@ -46,36 +47,7 @@ export async function setupPage(locale: string, url: string, res: Response) {
 
 async function generateCard(page: Page, res: Response) {
 	await page.waitForSelector('div.Card>div.card-host').catch(() => null);
-	await page
-		.waitForResponse(
-			(response) => {
-				const isCdn = response
-					.url()
-					.startsWith('https://cdn.enka.network/avatars/images/');
-				const isUi =
-					(response
-						.url()
-						.startsWith(
-							'https://enka.network/ui/UI_Gacha_AvatarImg_',
-						) ||
-						response
-							.url()
-							.startsWith(
-								'https://enka.network/ui/hsr/SpriteOutput/AvatarDrawCard/',
-							) ||
-						response
-							.url()
-							.startsWith(
-								'https://enka.network/ui/UI_Costume_',
-							)) &&
-					response.url().endsWith('.webp');
-				const isCharImg = isCdn || isUi;
-				const isLoaded = response.status() === 200;
-				return isCharImg && isLoaded;
-			},
-			{ timeout: 1000 },
-		)
-		.catch(() => null);
+	await page.waitForFunction('!document.querySelector("div.Card .loader")').catch(() => null);
 	const html = await page.waitForSelector('div.Card').catch(() => null);
 	if (!html) return res.status(500).send('No card found');
 	let img: Sharp | Buffer | null = await html
@@ -88,7 +60,6 @@ async function generateCard(page: Page, res: Response) {
 }
 
 export async function getImage(locale: string, enkaurl: string, res: Response) {
-	console.log('getting image');
 	const page = await setupPage(locale, enkaurl, res);
 	if (!(page instanceof Page)) return page;
 	const img = await generateCard(page, res);

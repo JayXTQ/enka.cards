@@ -1,7 +1,4 @@
 import { Response } from 'express';
-import { PutObjectCommandInput } from '@aws-sdk/client-s3';
-import { getImage, getUidImage } from './puppeteer';
-import { client } from '../s3';
 
 export function randomChars() {
 	let result = '';
@@ -64,3 +61,5 @@ export class RouteReturner {
 export function isReturnable(returnable: unknown): returnable is RouteError | RouteRedirect | RouteRespond {
 	return returnable instanceof RouteError || returnable instanceof RouteRedirect || returnable instanceof RouteRespond;
 }
+
+export const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
