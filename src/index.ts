@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { client } from './s3';
 import axios from 'axios';
 import uid from './routes/uid';
+import uidimage from './routes/uidimage';
 import user from './routes/user';
 import userimage from './routes/userimage';
 
@@ -14,6 +15,7 @@ const app = express();
 // https://cards.enka.network/u/jxtq/488BWO/10000089/3018594
 // http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 
+app.use('/', uidimage);
 app.use('/', uid);
 app.use('/', userimage);
 app.use('/', user);

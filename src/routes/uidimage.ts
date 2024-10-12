@@ -10,8 +10,8 @@ import { client } from '../s3';
 const router = Router();
 
 router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
-	console.log('uidimage');
 	res.setHeader('Access-Control-Allow-Origin', '*');
+	console.log('uidimage');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
 	const locale = url.searchParams.get('lang') || 'en';
 	const character = req.params.character;
