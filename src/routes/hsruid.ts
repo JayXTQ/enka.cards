@@ -1,43 +1,10 @@
 import { Request, Response, Router } from 'express';
-import axios from 'axios';
-import { getGICharacters } from '../utils/enka-api';
-import { generateUidParams } from '../utils/params';
-import {
-	getGICardNumber,
-	getHSRCardNumber,
-	sendImage,
-	HSRUidAPIData, setupHSRUidRoute
-} from '../utils/routes';
-import { getUidHash, imageIfSameHash, sameHash } from '../utils/hashes';
-import { isReturnable, randomChars, RouteReturner } from '../utils/misc';
-import { client } from '../s3';
+import { HSR } from '../utils/route-handlers';
 
 const router = Router();
 
 router.get('/hsr/:uid/:character', async (req: Request, res: Response) => {
-	const route = await setupHSRUidRoute(req, res, false);
-	if(isReturnable(route)) return new RouteReturner(route).returner(res);
-	const { locale, enkaUrl, result, params, hashes, cardNumber } = route;
-
-	const imgCache = imageIfSameHash(hashes, params, locale, enkaUrl, result)
-
-	if(isReturnable(imgCache)) return new RouteReturner(imgCache).returner(res);
-
-	const img = await sendImage(
-		locale,
-		enkaUrl,
-		res,
-		params,
-		hashes[1],
-		false,
-		result,
-		true,
-		cardNumber,
-	).catch(() => null);
-	if (!img) return res.status(500).send('Error');
-	if (!(img instanceof Buffer)) return img;
-	res.setHeader('Content-Type', 'image/png');
-	return res.end(img, 'binary');
+	return await HSR(req, res, false);
 });
 
 export default router;

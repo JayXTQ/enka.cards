@@ -163,11 +163,20 @@ async function uidRoute(
 	return { locale, character, enkaUrl, apiCall, result };
 }
 
+export type SetupRouteReturn = {
+	enkaUrl: string;
+	locale: string;
+	cardNumber: number;
+	params: {Bucket: string; Key: string; Body: string; ContentType: string};
+	hashes: [string, string];
+	result: string;
+} | RouteError | RouteRedirect;
+
 export async function setupGIUidRoute(
 	req: Request,
 	res: Response,
 	image: boolean
-) {
+): Promise<SetupRouteReturn> {
 	const route = await uidRoute(req, res, image, 0);
 
 	if (route instanceof RouteError || route instanceof RouteRedirect) return route;
@@ -189,7 +198,7 @@ export async function setupHSRUidRoute(
 	req: Request,
 	res: Response,
 	image: boolean
-) {
+): Promise<SetupRouteReturn> {
 	const route = await uidRoute(req, res, image, 1);
 
 	if (route instanceof RouteError || route instanceof RouteRedirect) return route;
