@@ -11,7 +11,6 @@ const router = Router();
 
 router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 	res.setHeader('Access-Control-Allow-Origin', '*');
-	console.log('uidimage');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
 	const locale = url.searchParams.get('lang') || 'en';
 	const character = req.params.character;
@@ -23,13 +22,19 @@ router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 
 	const cardNumber = await getCardNumber(apiData, locale, character);
 
+	console.log(cardNumber)
+
 	const params = generateUidParams(req, locale, cardNumber);
 	const hashes = await getUidHash(params.Key, apiData.avatarInfoList[cardNumber]);
 	const result = randomChars();
 
 	let img = await client.get(params.Key).catch(() => null);
+
+	console.log(img)
+
 	if (!img || !sameHash(hashes)) {
 		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result, true, cardNumber).catch(() => null);
+		console.log(img)
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		res.setHeader('Content-Type', 'image/png');
@@ -39,6 +44,7 @@ router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 	const imgBody = await img.byteArray();
 	if (!imgBody) {
 		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result, true, cardNumber).catch(() => null);
+		console.log(img)
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		return res.end(img, 'binary');
