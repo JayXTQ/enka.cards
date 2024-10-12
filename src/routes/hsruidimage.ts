@@ -12,7 +12,7 @@ const router = Router();
 router.get(
 	'/hsr/:uid/:character/image',
 	async (req: Request, res: Response) => {
-		const route = await setupHSRUidRoute(req, res, false);
+		const route = await setupHSRUidRoute(req, res, true);
 		if(isReturnable(route)) return new RouteReturner(route).returner(res);
 		const { locale, enkaUrl, result, params, hashes, cardNumber } = route;
 
