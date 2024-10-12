@@ -68,6 +68,8 @@ export async function getCardNumber(apiData: UidAPIData, locale: string, charact
 		return index === -1 ? null : index;
 	}
 
+	console.log(apiData.avatarInfoList)
+
 	console.log(GICharacters);
 
 	let cardNumber = avIdToIndex(parseInt(character)) || character.length === 1 ? parseInt(character)-1 : avIdToIndex(parseInt(GICharacters.find((e) => e.name === character)?.characterId || "0"));
