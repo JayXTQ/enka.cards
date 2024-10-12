@@ -22,7 +22,7 @@ router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 
 	const cardNumber = await getCardNumber(apiData, locale, character);
 
-	console.log(cardNumber)
+	console.log("cardNumber", cardNumber)
 
 	const params = generateUidParams(req, locale, cardNumber);
 	const hashes = await getUidHash(params.Key, apiData.avatarInfoList[cardNumber]);
