@@ -20,7 +20,7 @@ export async function getHash(key: string, username: string, hoyo: string, avata
 export async function getUidHash(key: string, apiHash: unknown): Promise<[string, string]> {
 	const hash = await client.get(`${key.replace('.png', '')}.hash`).catch(() => null);
 	const apiCall = JSON.stringify(apiHash);
-	const apiHash_ = crypto.createHash('md5').update(apiCall).digest('hex');
+	const apiHash_ = crypto.createHash('md5').update(apiCall || "").digest('hex');
 	return [await hash?.string() || "", apiHash_];
 }
 
