@@ -15,21 +15,36 @@ router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 	const locale = url.searchParams.get('lang') || 'en';
 	const character = req.params.character;
 	const enkaUrl = `https://enka.network/u/${req.params.uid}`;
-	const apiCall = await axios.get(`https://enka.network/api/uid/${req.params.uid}`).catch(() => null);
-	if(!apiCall) return res.status(404).send('Not found');
+	const apiCall = await axios
+		.get(`https://enka.network/api/uid/${req.params.uid}`)
+		.catch(() => null);
+	if (!apiCall) return res.status(404).send('Not found');
 
 	const apiData: GIUidAPIData = apiCall.data;
 
 	const cardNumber = await getGICardNumber(apiData, locale, character);
 
 	const params = generateUidParams(req, locale, cardNumber);
-	const hashes = await getUidHash(params.Key, apiData.avatarInfoList[cardNumber]);
+	const hashes = await getUidHash(
+		params.Key,
+		apiData.avatarInfoList[cardNumber],
+	);
 	const result = randomChars();
 
 	let img = await client.get(params.Key).catch(() => null);
 
 	if (!img || !sameHash(hashes)) {
-		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result, true, cardNumber).catch(() => null);
+		const img = await sendImage(
+			locale,
+			enkaUrl,
+			res,
+			params,
+			hashes[1],
+			true,
+			result,
+			true,
+			cardNumber,
+		).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		res.setHeader('Content-Type', 'image/png');
@@ -38,12 +53,22 @@ router.get('/u/:uid/:character/image', async (req: Request, res: Response) => {
 	res.setHeader('Content-Type', 'image/png');
 	const imgBody = await img.byteArray();
 	if (!imgBody) {
-		const img = await sendImage(locale, enkaUrl, res, params, hashes[1], true, result, true, cardNumber).catch(() => null);
+		const img = await sendImage(
+			locale,
+			enkaUrl,
+			res,
+			params,
+			hashes[1],
+			true,
+			result,
+			true,
+			cardNumber,
+		).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;
 		return res.end(img, 'binary');
 	}
 	return res.end(imgBody, 'binary');
-})
+});
 
 export default router;

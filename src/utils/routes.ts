@@ -7,7 +7,14 @@ import { Characters, getGICharacters, getHSRCharacters } from './enka-api';
 export async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
 	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
-	const paramsPath = req.params.username + '/' + req.params.hoyo + '/' + req.params.avatar + '/' + req.params.build;
+	const paramsPath =
+		req.params.username +
+		'/' +
+		req.params.hoyo +
+		'/' +
+		req.params.avatar +
+		'/' +
+		req.params.build;
 	const enkaUrl = `https://enka.network/u/${paramsPath}`;
 	const locale = url.searchParams.get('lang') || 'en';
 	return { enkaUrl, locale };
@@ -22,9 +29,12 @@ export async function sendImage(
 	image: boolean,
 	result: string,
 	uid = false,
-	cardNumber?: number
+	cardNumber?: number,
 ) {
-	const img = !uid || !cardNumber ? await getImage(locale, enkaurl, res) : await getUidImage(locale, enkaurl, res, cardNumber);
+	const img =
+		!uid || cardNumber === undefined
+			? await getImage(locale, enkaurl, res)
+			: await getUidImage(locale, enkaurl, res, cardNumber);
 	if (!(img instanceof Buffer)) return img;
 	try {
 		await Promise.allSettled([
@@ -58,21 +68,39 @@ export type GIUidAPIData = {
 		avatarId: number;
 		[k: string]: unknown;
 	}[];
-}
+};
 
-function getCardNumber(avIdToIndex: (id: number) => number | null, characterList: Characters[], character: string) {
+function getCardNumber(
+	avIdToIndex: (id: number) => number | null,
+	characterList: Characters[],
+	character: string,
+) {
 	const avatarId = avIdToIndex(parseInt(character));
-	const cardNoOrName = character.length === 1 ? parseInt(character) - 1 : avIdToIndex(parseInt(characterList.find((e) => e.name === character)?.characterId || "0"));
+	const cardNoOrName =
+		character.length === 1
+			? parseInt(character) - 1
+			: avIdToIndex(
+					parseInt(
+						characterList.find((e) => e.name === character)
+							?.characterId || '0',
+					),
+				);
 	let cardNumber = avatarId !== null ? avatarId : cardNoOrName;
 	if (!cardNumber) cardNumber = 0;
 	if (cardNumber === -1) cardNumber = 0;
 	return cardNumber;
 }
 
-export async function getGICardNumber(apiData: GIUidAPIData, locale: string, character: string){
-	const GICharacters = await getGICharacters(locale)
-	function avIdToIndex(id: number){
-		const index = apiData.avatarInfoList.findIndex((e) => e.avatarId === id);
+export async function getGICardNumber(
+	apiData: GIUidAPIData,
+	locale: string,
+	character: string,
+) {
+	const GICharacters = await getGICharacters(locale);
+	function avIdToIndex(id: number) {
+		const index = apiData.avatarInfoList.findIndex(
+			(e) => e.avatarId === id,
+		);
 		const ret = index === -1 ? null : index;
 		return ret;
 	}
@@ -87,12 +115,18 @@ export type HSRUidAPIData = {
 		}[];
 	};
 	[k: string]: unknown;
-}
+};
 
-export async function getHSRCardNumber(apiData: HSRUidAPIData, locale: string, character: string) {
-	const HSRCharacters = await getHSRCharacters(locale)
+export async function getHSRCardNumber(
+	apiData: HSRUidAPIData,
+	locale: string,
+	character: string,
+) {
+	const HSRCharacters = await getHSRCharacters(locale);
 	function avIdToIndex(id: number) {
-		const index = apiData.detailInfo.avatarDetailList.findIndex((e) => e.avatarId === id);
+		const index = apiData.detailInfo.avatarDetailList.findIndex(
+			(e) => e.avatarId === id,
+		);
 		const ret = index === -1 ? null : index;
 		return ret;
 	}

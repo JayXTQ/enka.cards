@@ -15,7 +15,7 @@ const app = express();
 // https://cards.enka.network/u/jxtq/488BWO/10000089/3018594
 // http://localhost:3000/u/jxtq/488BWO/10000089/3018594
 
-app.use('/', hsruidimage)
+app.use('/', hsruidimage);
 app.use('/', hsruid);
 app.use('/', uidimage);
 app.use('/', uid);
@@ -33,5 +33,5 @@ app.listen(port, () => {
 });
 
 app.use((_: Request, res: Response) => {
-	res.redirect('https://enka.network')
-})
+	res.redirect('https://enka.network');
+});

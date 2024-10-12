@@ -7,16 +7,24 @@ import { getHash, sameHash } from '../utils/hashes';
 
 const router = Router();
 
-router.get('/u/:username/:hoyo/:avatar/:build', async (req: Request, res: Response) => {
-	const { enkaUrl, locale } = await setupRoute(req, res);
-	if (!req.headers['user-agent']?.includes('Discordbot')) {
-		return res.redirect(enkaUrl);
-	}
-	const params = generateParams(req, locale);
-	const result = randomChars();
-	const hashes = await getHash(params.Key, req.params.username, req.params.hoyo, req.params.avatar, req.params.build);
-	if (sameHash(hashes)) {
-		return res.send(`<!DOCTYPE html>
+router.get(
+	'/u/:username/:hoyo/:avatar/:build',
+	async (req: Request, res: Response) => {
+		const { enkaUrl, locale } = await setupRoute(req, res);
+		if (!req.headers['user-agent']?.includes('Discordbot')) {
+			return res.redirect(enkaUrl);
+		}
+		const params = generateParams(req, locale);
+		const result = randomChars();
+		const hashes = await getHash(
+			params.Key,
+			req.params.username,
+			req.params.hoyo,
+			req.params.avatar,
+			req.params.build,
+		);
+		if (sameHash(hashes)) {
+			return res.send(`<!DOCTYPE html>
         <html lang="${locale}">
             <head>
                 <meta content="enka.cards" property="og:title" />
@@ -30,12 +38,21 @@ router.get('/u/:username/:hoyo/:avatar/:build', async (req: Request, res: Respon
                 <title>enka.cards</title>
             </head>
         </html>`);
-	}
-	const img = await sendImage(locale, enkaUrl, res, params, hashes[1], false, result).catch(() => null);
-	if (!img) return res.status(500).send('Error');
-	if (!(img instanceof Buffer)) return img;
-	res.setHeader('Content-Type', 'image/png');
-	return res.end(img, 'binary');
-});
+		}
+		const img = await sendImage(
+			locale,
+			enkaUrl,
+			res,
+			params,
+			hashes[1],
+			false,
+			result,
+		).catch(() => null);
+		if (!img) return res.status(500).send('Error');
+		if (!(img instanceof Buffer)) return img;
+		res.setHeader('Content-Type', 'image/png');
+		return res.end(img, 'binary');
+	},
+);
 
 export default router;

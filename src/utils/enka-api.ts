@@ -1,19 +1,24 @@
 import axios from 'axios';
 
-type GICharactersAPI = Record<string, {
-	[k: string]: unknown;
-	NameTextMapHash: number;
-}>
+type GICharactersAPI = Record<
+	string,
+	{
+		[k: string]: unknown;
+		NameTextMapHash: number;
+	}
+>;
 
 export type Characters = {
 	name: string;
 	characterId: string;
 	nameHash: number;
-}
+};
 
 export async function getGICharacters(locale: string) {
 	const locales = await getGILocales();
-	const response = await axios.get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/characters.json');
+	const response = await axios.get(
+		'https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/characters.json',
+	);
 	const data: GICharactersAPI = response.data;
 	const returndata: Characters[] = [];
 	const localedata = locales[locale] || locales['en'];
@@ -29,25 +34,36 @@ export async function getGICharacters(locale: string) {
 }
 
 async function getGILocales(): Promise<Record<string, Record<string, string>>> {
-	const response = await axios.get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/loc.json');
+	const response = await axios.get(
+		'https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/loc.json',
+	);
 	return response.data;
 }
 
-async function getHSRLocales(): Promise<Record<string, Record<string, string>>> {
-	const response = await axios.get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/hsr/hsr.json');
+async function getHSRLocales(): Promise<
+	Record<string, Record<string, string>>
+> {
+	const response = await axios.get(
+		'https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/hsr/hsr.json',
+	);
 	return response.data;
 }
 
-type HSRCharactersAPI = Record<string, {
-	[k: string]: unknown;
-	AvatarName: {
-		Hash: number;
+type HSRCharactersAPI = Record<
+	string,
+	{
+		[k: string]: unknown;
+		AvatarName: {
+			Hash: number;
+		};
 	}
-}>
+>;
 
 export async function getHSRCharacters(locale: string) {
 	const locales = await getHSRLocales();
-	const response = await axios.get('https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/hsr/honker_characters.json');
+	const response = await axios.get(
+		'https://raw.githubusercontent.com/EnkaNetwork/API-docs/refs/heads/master/store/hsr/honker_characters.json',
+	);
 	const data: HSRCharactersAPI = response.data;
 	const returndata: Characters[] = [];
 	const localedata = locales[locale] || locales['en'];

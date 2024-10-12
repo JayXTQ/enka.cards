@@ -2,7 +2,12 @@ import { Request, Response, Router } from 'express';
 import axios from 'axios';
 import { getGICharacters } from '../utils/enka-api';
 import { generateUidParams } from '../utils/params';
-import { getGICardNumber, getHSRCardNumber, sendImage, HSRUidAPIData } from '../utils/routes';
+import {
+	getGICardNumber,
+	getHSRCardNumber,
+	sendImage,
+	HSRUidAPIData,
+} from '../utils/routes';
 import { getUidHash, sameHash } from '../utils/hashes';
 import { randomChars } from '../utils/misc';
 import { client } from '../s3';
@@ -20,18 +25,23 @@ router.get('/hsr/:uid/:character', async (req: Request, res: Response) => {
 		return res.redirect(enkaUrl);
 	}
 
-	const apiCall = await axios.get(`https://enka.network/api/hsr/uid/${req.params.uid}`).catch(() => null);
-	if(!apiCall) return res.status(404).send('Not found');
+	const apiCall = await axios
+		.get(`https://enka.network/api/hsr/uid/${req.params.uid}`)
+		.catch(() => null);
+	if (!apiCall) return res.status(404).send('Not found');
 
 	const apiData: HSRUidAPIData = apiCall.data;
 
 	const cardNumber = await getHSRCardNumber(apiData, locale, character);
 
 	const params = generateUidParams(req, locale, cardNumber);
-	const hashes = await getUidHash(params.Key, apiData.detailInfo.avatarDetailList[cardNumber]);
+	const hashes = await getUidHash(
+		params.Key,
+		apiData.detailInfo.avatarDetailList[cardNumber],
+	);
 	const result = randomChars();
 
-	if(sameHash(hashes)) {
+	if (sameHash(hashes)) {
 		return res.send(`<!DOCTYPE html>
         <html lang="${locale}">
             <head>
@@ -48,11 +58,21 @@ router.get('/hsr/:uid/:character', async (req: Request, res: Response) => {
         </html>`);
 	}
 
-	const img = await sendImage(locale, enkaUrl, res, params, hashes[1], false, result, true, cardNumber).catch(() => null);
+	const img = await sendImage(
+		locale,
+		enkaUrl,
+		res,
+		params,
+		hashes[1],
+		false,
+		result,
+		true,
+		cardNumber,
+	).catch(() => null);
 	if (!img) return res.status(500).send('Error');
 	if (!(img instanceof Buffer)) return img;
 	res.setHeader('Content-Type', 'image/png');
 	return res.end(img, 'binary');
-})
+});
 
 export default router;

@@ -3,7 +3,9 @@ import {
 	GetObjectCommand,
 	DeleteObjectCommand,
 	PutObjectCommand,
-	PutObjectCommandInput, ListBucketsCommand, CreateBucketCommand
+	PutObjectCommandInput,
+	ListBucketsCommand,
+	CreateBucketCommand,
 } from '@aws-sdk/client-s3';
 import { Client as MinioClient } from 'minio';
 import { Readable } from 'stream';
@@ -13,13 +15,13 @@ let S3: MinioClient | null = null;
 export let client: Client;
 
 export function init() {
-	if(!process.env.S3_ENDPOINT) return;
+	if (!process.env.S3_ENDPOINT) return;
 	const mClient = new MinioClient({
 		endPoint: process.env.S3_ENDPOINT as string,
 		useSSL: true,
 		accessKey: process.env.ACCESS_KEY_ID as string,
 		secretKey: process.env.SECRET_ACCESS_KEY as string,
-	})
+	});
 
 	S3 = mClient;
 	client = new Client(mClient);
@@ -33,43 +35,40 @@ function getClient() {
 	return S3 as MinioClient;
 }
 
-async function checkBucket(){
+async function checkBucket() {
 	const client = getClient();
-	if(!client) return;
-	if(!await client.bucketExists('enkacards')) {
+	if (!client) return;
+	if (!(await client.bucketExists('enkacards'))) {
 		await client.makeBucket('enkacards');
 		await Promise.allSettled([
-			client.setBucketPolicy('enkacards', JSON.stringify({
-				"Version": "2012-10-17",
-				"Statement": [
-					{
-						"Effect": "Allow",
-						"Principal": {
-							"AWS": [
-								"*"
-							]
+			client.setBucketPolicy(
+				'enkacards',
+				JSON.stringify({
+					Version: '2012-10-17',
+					Statement: [
+						{
+							Effect: 'Allow',
+							Principal: {
+								AWS: ['*'],
+							},
+							Action: ['s3:GetObject'],
+							Resource: ['arn:aws:s3:::enkacards/*'],
 						},
-						"Action": [
-							"s3:GetObject"
-						],
-						"Resource": [
-							"arn:aws:s3:::enkacards/*"
-						]
-					}
-				]
-			})),
+					],
+				}),
+			),
 			client.setBucketLifecycle('enkacards', {
 				Rule: [
 					{
 						ID: 'Delete images after 1 day',
 						Status: 'Enabled',
 						Expiration: {
-							Days: 1
-						}
-					}
-				]
-			})
-		])
+							Days: 1,
+						},
+					},
+				],
+			}),
+		]);
 	}
 }
 
@@ -77,22 +76,24 @@ class Client {
 	private readonly client: MinioClient;
 
 	constructor(client?: MinioClient) {
-		if(!client) client = getClient();
-		if(!client) throw new Error('S3 not initialized');
+		if (!client) client = getClient();
+		if (!client) throw new Error('S3 not initialized');
 		this.client = client;
 	}
 
 	async get(Key: string) {
 		await checkBucket();
 
-		const obj = await this.client.getObject('enkacards', Key).catch((err) => {
-			// console.error(err)
-			return null;
-		});
+		const obj = await this.client
+			.getObject('enkacards', Key)
+			.catch((err) => {
+				// console.error(err)
+				return null;
+			});
 
 		if (!obj) return null;
 
-		async function byteArray(){
+		async function byteArray() {
 			const chunks: Uint8Array[] = [];
 			for await (const chunk of obj as NonNullable<typeof obj>) {
 				chunks.push(chunk);
@@ -102,7 +103,7 @@ class Client {
 			return byteArray;
 		}
 
-		async function string(){
+		async function string() {
 			let str = '';
 			for await (const chunk of obj as NonNullable<typeof obj>) {
 				str += chunk.toString();
@@ -113,7 +114,7 @@ class Client {
 
 		return {
 			string,
-			byteArray
+			byteArray,
 		};
 	}
 
@@ -124,25 +125,32 @@ class Client {
 	async delete(Key: string) {
 		await checkBucket();
 		return await this.client.removeObject('enkacards', Key).catch((err) => {
-			console.error(err)
+			console.error(err);
 			return null;
 		});
 	}
 
-	async put(Key: string, Body: NonNullable<PutObjectCommandInput['Body']>, ContentType: string = 'image/png') {
+	async put(
+		Key: string,
+		Body: NonNullable<PutObjectCommandInput['Body']>,
+		ContentType: string = 'image/png',
+	) {
 		await checkBucket();
 
 		if (typeof Body === 'string') {
 			Body = Readable.from(Body);
 		}
-		if(Body instanceof Uint8Array) Body = Readable.from(Body);
-		if(Body instanceof Blob) Body = Readable.from(Buffer.from(await Body.arrayBuffer()));
+		if (Body instanceof Uint8Array) Body = Readable.from(Body);
+		if (Body instanceof Blob)
+			Body = Readable.from(Buffer.from(await Body.arrayBuffer()));
 
-		return await this.client.putObject('enkacards', Key, Body, undefined, {
-			ContentType
-		}).catch((err) => {
-			console.error(err)
-			return null;
-		});
+		return await this.client
+			.putObject('enkacards', Key, Body, undefined, {
+				ContentType,
+			})
+			.catch((err) => {
+				console.error(err);
+				return null;
+			});
 	}
 }
