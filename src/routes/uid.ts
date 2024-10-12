@@ -2,56 +2,26 @@ import { Request, Response, Router } from 'express';
 import axios from 'axios';
 import { getGICharacters } from '../utils/enka-api';
 import { generateUidParams } from '../utils/params';
-import { getGICardNumber, sendImage, GIUidAPIData } from '../utils/routes';
-import { getUidHash, sameHash } from '../utils/hashes';
-import { randomChars } from '../utils/misc';
+import {
+	getGICardNumber,
+	sendImage,
+	GIUidAPIData,
+	setupGIUidRoute,
+} from '../utils/routes';
+import { getUidHash, imageIfSameHash, sameHash } from '../utils/hashes';
+import { isReturnable, randomChars, RouteError, RouteRedirect, RouteReturner } from '../utils/misc';
 import { client } from '../s3';
 
 const router = Router();
 
 router.get('/u/:uid/:character', async (req: Request, res: Response) => {
-	res.setHeader('Access-Control-Allow-Origin', '*');
-	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
-	const locale = url.searchParams.get('lang') || 'en';
-	const character = req.params.character;
-	const enkaUrl = `https://enka.network/u/${req.params.uid}`;
+	const route = await setupGIUidRoute(req, res, false);
+	if(isReturnable(route)) return new RouteReturner(route).returner(res);
+	const { locale, enkaUrl, result, params, hashes, cardNumber } = route;
 
-	if (!req.headers['user-agent']?.includes('Discordbot')) {
-		return res.redirect(enkaUrl);
-	}
+	const imgCache = imageIfSameHash(hashes, params, locale, enkaUrl, result)
 
-	const apiCall = await axios
-		.get(`https://enka.network/api/uid/${req.params.uid}`)
-		.catch(() => null);
-	if (!apiCall) return res.status(404).send('Not found');
-
-	const apiData: GIUidAPIData = apiCall.data;
-
-	const cardNumber = await getGICardNumber(apiData, locale, character);
-
-	const params = generateUidParams(req, locale, cardNumber);
-	const hashes = await getUidHash(
-		params.Key,
-		apiData.avatarInfoList[cardNumber],
-	);
-	const result = randomChars();
-
-	if (sameHash(hashes)) {
-		return res.send(`<!DOCTYPE html>
-        <html lang="${locale}">
-            <head>
-                <meta content="enka.cards" property="og:title" />
-                <meta content="${enkaUrl}" property="og:url" />
-                <meta name="twitter:card" content="summary_large_image">
-                <meta property="twitter:domain" content="enka.cards">
-                <meta property="twitter:url" content="${enkaUrl}">
-                <meta name="twitter:title" content="enka.cards">
-                <meta name="twitter:description" content="">
-                <meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
-                <title>enka.cards</title>
-            </head>
-        </html>`);
-	}
+	if(isReturnable(imgCache)) return new RouteReturner(imgCache).returner(res);
 
 	const img = await sendImage(
 		locale,

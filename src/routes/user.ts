@@ -2,8 +2,8 @@ import { Request, Response, Router } from 'express';
 import { client } from '../s3';
 import { generateParams } from '../utils/params';
 import { sendImage, setupRoute } from '../utils/routes';
-import { randomChars } from '../utils/misc';
-import { getHash, sameHash } from '../utils/hashes';
+import { isReturnable, randomChars, RouteReturner } from '../utils/misc';
+import { getHash, imageIfSameHash, sameHash } from '../utils/hashes';
 
 const router = Router();
 
@@ -23,22 +23,11 @@ router.get(
 			req.params.avatar,
 			req.params.build,
 		);
-		if (sameHash(hashes)) {
-			return res.send(`<!DOCTYPE html>
-        <html lang="${locale}">
-            <head>
-                <meta content="enka.cards" property="og:title" />
-                <meta content="${enkaUrl}" property="og:url" />
-                <meta name="twitter:card" content="summary_large_image">
-                <meta property="twitter:domain" content="enka.cards">
-                <meta property="twitter:url" content="${enkaUrl}">
-                <meta name="twitter:title" content="enka.cards">
-                <meta name="twitter:description" content="">
-                <meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
-                <title>enka.cards</title>
-            </head>
-        </html>`);
-		}
+
+		const imgCache = imageIfSameHash(hashes, params, locale, enkaUrl, result)
+
+		if(isReturnable(imgCache)) return new RouteReturner(imgCache).returner(res);
+
 		const img = await sendImage(
 			locale,
 			enkaUrl,

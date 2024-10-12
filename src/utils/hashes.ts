@@ -1,6 +1,7 @@
 import { client } from '../s3';
 import axios from 'axios';
 import crypto from 'crypto';
+import { RouteRespond } from './misc';
 
 export async function getHash(
 	key: string,
@@ -50,4 +51,30 @@ export async function getUidHash(
 
 export function sameHash(hashes: [string, string]) {
 	return hashes[0] === hashes[1];
+}
+
+export function imageIfSameHash(
+	hashes: [string, string],
+	params: { Key: string },
+	locale: string,
+	enkaUrl: string,
+	result: string,
+) {
+	if (sameHash(hashes)) {
+		return new RouteRespond(`<!DOCTYPE html>
+		<html lang="${locale}">
+			<head>
+				<meta content="enka.cards" property="og:title" />
+				<meta content="${enkaUrl}" property="og:url" />
+				<meta name="twitter:card" content="summary_large_image">
+				<meta property="twitter:domain" content="enka.cards">
+				<meta property="twitter:url" content="${enkaUrl}">
+				<meta name="twitter:title" content="enka.cards">
+				<meta name="twitter:description" content="">
+				<meta name="twitter:image" content="${client.getUrl(params.Key)}?${result}">
+				<title>enka.cards</title>
+			</head>
+		</html>`);
+	}
+	return null;
 }

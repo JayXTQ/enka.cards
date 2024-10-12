@@ -3,6 +3,10 @@ import { PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { getImage, getUidImage } from './puppeteer';
 import { client } from '../s3';
 import { Characters, getGICharacters, getHSRCharacters } from './enka-api';
+import axios from 'axios';
+import { generateUidParams } from './params';
+import { getUidHash } from './hashes';
+import { randomChars, RouteError, RouteRedirect } from './misc';
 
 export async function setupRoute(req: Request, res: Response) {
 	res.setHeader('Access-Control-Allow-Origin', '*');
@@ -131,4 +135,74 @@ export async function getHSRCardNumber(
 		return ret;
 	}
 	return getCardNumber(avIdToIndex, HSRCharacters, character);
+}
+
+async function uidRoute(
+	req: Request,
+	res: Response,
+	image: boolean,
+	hoyo_type: 0 | 1,
+) {
+	res.setHeader('Access-Control-Allow-Origin', '*');
+	const url = new URL(req.url, `${req.protocol}://${req.headers.host}`);
+	const locale = url.searchParams.get('lang') || 'en';
+	const character = req.params.character;
+	const enkaUrl = `https://enka.network/${hoyo_type === 0 ? 'u' : 'hsr'}/${req.params.uid}`;
+
+	if (!image && !req.headers['user-agent']?.includes('Discordbot')) {
+		return new RouteRedirect(enkaUrl);
+	}
+
+	const apiUrl = hoyo_type === 0 ? 'uid' : 'hsr/uid';
+
+	const apiCall = await axios
+		.get(`https://enka.network/api/${apiUrl}/${req.params.uid}`)
+		.catch(() => null);
+	if (!apiCall) return new RouteError('Not found', 404);
+	const result = randomChars();
+	return { locale, character, enkaUrl, apiCall, result };
+}
+
+export async function setupGIUidRoute(
+	req: Request,
+	res: Response,
+	image: boolean
+) {
+	const route = await uidRoute(req, res, image, 0);
+
+	if (route instanceof RouteError || route instanceof RouteRedirect) return route;
+	const { locale, character, enkaUrl, apiCall, result } = route;
+
+	const apiData: GIUidAPIData = apiCall.data;
+
+	const cardNumber = await getGICardNumber(apiData, locale, character);
+
+	const params = generateUidParams(req, locale, cardNumber);
+	const hashes = await getUidHash(
+		params.Key,
+		apiData.avatarInfoList[cardNumber],
+	);
+	return { enkaUrl, locale, cardNumber, params, hashes, result };
+}
+
+export async function setupHSRUidRoute(
+	req: Request,
+	res: Response,
+	image: boolean
+) {
+	const route = await uidRoute(req, res, image, 1);
+
+	if (route instanceof RouteError || route instanceof RouteRedirect) return route;
+	const { locale, character, enkaUrl, apiCall, result } = route;
+
+	const apiData: HSRUidAPIData = apiCall.data;
+
+	const cardNumber = await getHSRCardNumber(apiData, locale, character);
+
+	const params = generateUidParams(req, locale, cardNumber);
+	const hashes = await getUidHash(
+		params.Key,
+		apiData.detailInfo.avatarDetailList[cardNumber],
+	);
+	return { enkaUrl, locale, cardNumber, params, hashes, result };
 }
