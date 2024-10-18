@@ -3,9 +3,9 @@ import { getBrowser } from '../puppeteer';
 import { Page } from 'puppeteer';
 import { Sharp } from 'sharp';
 import { cardify } from './sharp';
-import { sleep } from './misc';
+import { generateGlobalToggles, sleep } from './misc';
 
-export async function setupPage(locale: string, url: string, res: Response) {
+export async function setupPage(locale: string, url: string, res: Response, hoyo_type: 0 | 1) {
 	const page = await (await getBrowser()).newPage();
 	page.on('pageerror,', (err) => console.log('PAGE ERROR:', err));
 	page.on('error', (err) => console.log('ERROR:', err));
@@ -13,6 +13,7 @@ export async function setupPage(locale: string, url: string, res: Response) {
 		console.log('REQUEST FAILED:', req.url()),
 	);
 	try {
+		const globalToggles = generateGlobalToggles(hoyo_type);
 		const cookies = [
 			{
 				name: 'locale',
@@ -23,7 +24,7 @@ export async function setupPage(locale: string, url: string, res: Response) {
 			},
 			{
 				name: 'globalToggles',
-				value: 'eyJ1aWQiOnRydWUsIm5pY2tuYW1lIjp0cnVlLCJkYXJrIjpmYWxzZSwic2F2ZUltYWdlVG9TZXJ2ZXIiOmZhbHNlLCJzdWJzdGF0cyI6ZmFsc2UsInN1YnNCcmVha2Rvd24iOmZhbHNlLCJ1c2VyQ29udGVudCI6dHJ1ZSwiYWRhcHRpdmVDb2xvciI6ZmFsc2UsInByb2ZpbGVDYXRlZ29yeSI6MCwiaGlkZU5hbWVzIjpmYWxzZSwiaG95b190eXBlIjowfQ',
+				value: globalToggles,
 				domain: 'enka.network',
 				path: '/',
 				expires: -1,
@@ -59,8 +60,8 @@ async function generateCard(page: Page, res: Response) {
 	return img;
 }
 
-export async function getImage(locale: string, enkaurl: string, res: Response) {
-	const page = await setupPage(locale, enkaurl, res);
+export async function getImage(locale: string, enkaurl: string, res: Response, hoyo_type: 0 | 1) {
+	const page = await setupPage(locale, enkaurl, res, hoyo_type);
 	if (!(page instanceof Page)) return page;
 	const img = await generateCard(page, res);
 	return img;
@@ -72,7 +73,8 @@ export async function getUidImage(
 	res: Response,
 	cardNumber: number,
 ) {
-	const page = await setupPage(locale, enkaurl, res);
+	const hoyo_type = enkaurl.includes('/u/') ? 0 : 1;
+	const page = await setupPage(locale, enkaurl, res, hoyo_type);
 	if (!(page instanceof Page)) return page;
 	await page
 		.waitForSelector('content>div.CharacterList>div.avatar.live')

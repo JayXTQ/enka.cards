@@ -24,15 +24,16 @@ router.get(
 		const result = randomChars();
 
 		let img = await client.get(params.Key).catch(() => null);
-		if (!img || !sameHash(hashes)) {
+		if (!img || !sameHash(hashes.hashes)) {
 			const img = await sendImage(
 				locale,
 				enkaUrl,
 				res,
 				params,
-				hashes[1],
+				hashes.hashes[1],
 				true,
 				result,
+				hashes.hoyo_type
 			).catch(() => null);
 			if (!img) return res.status(500).send('Error');
 			if (!(img instanceof Buffer)) return img;
@@ -47,9 +48,10 @@ router.get(
 				enkaUrl,
 				res,
 				params,
-				hashes[1],
+				hashes.hashes[1],
 				true,
 				result,
+				hashes.hoyo_type
 			).catch(() => null);
 			if (!img) return res.status(500).send('Error');
 			if (!(img instanceof Buffer)) return img;

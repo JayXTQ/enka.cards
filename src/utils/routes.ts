@@ -32,12 +32,13 @@ export async function sendImage(
 	apihash: string,
 	image: boolean,
 	result: string,
+	hoyo_type: 0 | 1,
 	uid = false,
 	cardNumber?: number,
 ) {
 	const img =
 		!uid || cardNumber === undefined
-			? await getImage(locale, enkaurl, res)
+			? await getImage(locale, enkaurl, res, hoyo_type)
 			: await getUidImage(locale, enkaurl, res, cardNumber);
 	if (!(img instanceof Buffer)) return img;
 	try {

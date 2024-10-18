@@ -24,7 +24,7 @@ router.get(
 			req.params.build,
 		);
 
-		const imgCache = imageIfSameHash(hashes, params, locale, enkaUrl, result)
+		const imgCache = imageIfSameHash(hashes.hashes, params, locale, enkaUrl, result)
 
 		if(isReturnable(imgCache)) return new RouteReturner(imgCache).returner(res);
 
@@ -33,9 +33,10 @@ router.get(
 			enkaUrl,
 			res,
 			params,
-			hashes[1],
+			hashes.hashes[1],
 			false,
 			result,
+			hashes.hoyo_type,
 		).catch(() => null);
 		if (!img) return res.status(500).send('Error');
 		if (!(img instanceof Buffer)) return img;

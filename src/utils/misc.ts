@@ -63,3 +63,28 @@ export function isReturnable(returnable: unknown): returnable is RouteError | Ro
 }
 
 export const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+const defaultGlobalToggles = {
+	"uid":true,
+	"nickname":true,
+	"dark":false,
+	"saveImageToServer":false,
+	"substats":false,
+	"subsBreakdown":false,
+	"userContent":true,
+	"adaptiveColor":false,
+	"profileCategory":0,
+	"hideNames":false,
+	"hoyo_type":0 as 0 | 1,
+}
+
+export function generateGlobalToggles(hoyo_type: 0 | 1, substats: boolean = false, subsBreakdown: boolean = false) {
+	const globalToggles = {
+		...defaultGlobalToggles,
+		"substats":substats,
+		"subsBreakdown":subsBreakdown,
+		"hoyo_type":hoyo_type,
+	}
+	const jsonString = JSON.stringify(globalToggles);
+	return Buffer.from(jsonString).toString('base64');
+}

@@ -21,6 +21,7 @@ async function routeHandler(res: Response, image: boolean, route: SetupRouteRetu
 			hashes[1],
 			false,
 			result,
+			0,
 			true,
 			cardNumber,
 		).catch(() => null);
@@ -40,6 +41,7 @@ async function routeHandler(res: Response, image: boolean, route: SetupRouteRetu
 				hashes[1],
 				true,
 				result,
+				0,
 				true,
 				cardNumber,
 			).catch(() => null);
@@ -59,6 +61,7 @@ async function routeHandler(res: Response, image: boolean, route: SetupRouteRetu
 				hashes[1],
 				true,
 				result,
+				0,
 				true,
 				cardNumber,
 			).catch(() => null);

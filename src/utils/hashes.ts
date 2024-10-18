@@ -9,11 +9,11 @@ export async function getHash(
 	hoyo: string,
 	avatar: string,
 	build: string,
-): Promise<[string, string]> {
+): Promise<{ hashes: [string, string], hoyo_type: 0 | 1 }> {
 	const settled = await Promise.allSettled([
 		client.get(`${key.replace('.png', '')}.hash`),
 		axios
-			.get(
+			.get<Record<string, { id: number, avatarId: string, hoyo_type: 0 | 1 }[]>>(
 				`https://enka.network/api/profile/${username}/hoyos/${hoyo}/builds/`,
 			)
 			.catch(() => null),
@@ -23,7 +23,7 @@ export async function getHash(
 		settled[0].status === 'fulfilled' ? settled[0].value || '' : '';
 	const api = settled[1].status === 'fulfilled' ? settled[1].value : null;
 	const apiAvatar = api ? api.data[avatar] : null;
-	const apiData: Record<string | number, unknown> | null = api
+	const apiData = api
 		? apiAvatar
 			? apiAvatar.find((e: { id: number }) => e.id === parseInt(build)) ||
 				null
@@ -31,7 +31,7 @@ export async function getHash(
 		: null;
 	const apiCall = apiData ? JSON.stringify(apiData) : '{}';
 	const apiHash = crypto.createHash('md5').update(apiCall).digest('hex');
-	return [hash ? await hash.string() : '', apiHash];
+	return { hashes: [hash ? await hash.string() : '', apiHash], hoyo_type: apiData ? apiData.hoyo_type : 0 };
 }
 
 export async function getUidHash(
