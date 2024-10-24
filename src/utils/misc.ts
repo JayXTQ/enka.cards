@@ -78,7 +78,7 @@ const defaultGlobalToggles = {
 	"hoyo_type":0 as 0 | 1,
 }
 
-export function generateGlobalToggles(hoyo_type: 0 | 1, substats: boolean = false, subsBreakdown: boolean = false) {
+export function generateGlobalToggles(hoyo_type: 0 | 1, substats: boolean = false, subsBreakdown: boolean = true) {
 	const globalToggles = {
 		...defaultGlobalToggles,
 		"substats":substats,
